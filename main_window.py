@@ -8,9 +8,11 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QImage
 from pyqtgraph import PlotWidget
 import numpy as np
-# from process import *
+from process import *
+from sub_windows import *
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -18,6 +20,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(1081, 625)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        MainWindow.setWindowIcon(QtGui.QIcon('Resourses/Icons/balance.svg'))
 
         #-------------------------Infomation Box-----------------------#
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
@@ -82,7 +85,7 @@ class Ui_MainWindow(object):
         self.scrollBar.setGeometry(QtCore.QRect(10, 29, 20, 371))
         self.scrollBar.setOrientation(QtCore.Qt.Vertical)
         self.scrollBar.setObjectName("scrollBar")
-        self.main_frame = QtWidgets.QLabel(self.groupBox_2)
+        self.main_frame = MainFrame(self.groupBox_2)
         self.main_frame.setGeometry(QtCore.QRect(216, 20, 531, 381))
         self.main_frame.setText("")
         self.main_frame.setObjectName("main_frame")
@@ -253,7 +256,7 @@ class Ui_MainWindow(object):
         self.graphicsView.setEnabled(True)
         self.graphicsView.setStyleSheet("background:white")
 
-        # self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
+        self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
 
 
         self.retranslateUi(MainWindow)
@@ -318,8 +321,11 @@ class Ui_MainWindow(object):
         self.calib_btn.clicked.connect(self.calib_btn_clicked)
 
 
-    def show_main_frame(self, frame):
-        self.main_frame.setPixmap(frame)
+
+
+
+
+
 
     def show_sub_frame(self, frame1, frame2, frame3, frame4):
         self.sub_frame1.setPixmap(frame1.scaled(self.sub_frame1.size(), QtCore.Qt.KeepAspectRatio))
@@ -356,32 +362,32 @@ class Ui_MainWindow(object):
     def show_chart(self):
         self.draw_graph()
 
-
-
     def run_btn_clicked(self):
-        print("Press RUN button")
+        self.console_list.addItem("Blue color: " + str(self.main_frame.blueHSV))
+        self.console_list.addItem("Laser color: " + str(self.main_frame.laserHSV))
+        # print("Press RUN button")
         self.console_list.addItem("Press RUN button")
+        if self.is_chart() == True:
+            self.show_chart()
+        else:
+            print()
+
         frame1, frame2, frame3, frame4 = self.get_sub_frame(1)
         self.show_sub_frame(frame1, frame2, frame3, frame4)
 
-
     def calib_btn_clicked(self):
-        print("Press CALIBRATE button")
+        # print("Press CALIBRATE button")
         self.console_list.addItem("Press CALIBRATE button")
+        image = cv2.imread("sample.jpg")
+        self.main_frame.show_main_frame(image)
+        self.main_frame.is_laser = 0
+        self.console_list.addItem("CHON 2 THONG SO MAU SAC TREN HINH")
+        dlg = CustomDialog(message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
+        if not dlg.exec_():
+            self.main_frame.setDisabled(True)
 
-        # image = cv2.imread("sample.jpg")
-        # process_image = Process(image, 0,0,0,0)
-        # frame = process_image.convert_RGB_to_HSV()
 
 
-
-
-
-
-        frame = QtGui.QPixmap("sample.jpg")
-        self.show_main_frame(frame)
-        if self.is_chart() == True:
-            self.show_chart()
 
 
 if __name__ == "__main__":
