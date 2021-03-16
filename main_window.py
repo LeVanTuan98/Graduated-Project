@@ -321,12 +321,6 @@ class Ui_MainWindow(object):
         self.calib_btn.clicked.connect(self.calib_btn_clicked)
 
 
-
-
-
-
-
-
     def show_sub_frame(self, frame1, frame2, frame3, frame4):
         self.sub_frame1.setPixmap(frame1.scaled(self.sub_frame1.size(), QtCore.Qt.KeepAspectRatio))
         self.sub_frame2.setPixmap(frame2.scaled(self.sub_frame2.size(), QtCore.Qt.KeepAspectRatio))
@@ -362,15 +356,29 @@ class Ui_MainWindow(object):
     def show_chart(self):
         self.draw_graph()
 
+
+
+
+
+
     def run_btn_clicked(self):
-        self.console_list.addItem("Blue color: " + str(self.main_frame.blueHSV))
-        self.console_list.addItem("Laser color: " + str(self.main_frame.laserHSV))
+        self.console_list.addItem("Blue color: " + str(self.main_frame.blue_HSV))
+        self.console_list.addItem("Laser color: " + str(self.main_frame.laser_HSV))
         # print("Press RUN button")
         self.console_list.addItem("Press RUN button")
         if self.is_chart() == True:
             self.show_chart()
         else:
-            print()
+            main_process = MainProcess(file_name="Inputs/example_video/calibVideo.mp4")
+            main_process.set_blue_HSV(self.main_frame.blue_HSV)
+            main_process.set_laser_HSV(self.main_frame.blue_HSV)
+            main_process.extract_frame()
+            self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.index))
+            for i in range(1, main_process.index + 1):
+                main_process.process_image(i)
+                self.console_list.addItem("{i} - {dis} cm".format(i=i, dis=main_process.distance_x))
+
+
 
         frame1, frame2, frame3, frame4 = self.get_sub_frame(1)
         self.show_sub_frame(frame1, frame2, frame3, frame4)
@@ -385,9 +393,6 @@ class Ui_MainWindow(object):
         dlg = CustomDialog(message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
         if not dlg.exec_():
             self.main_frame.setDisabled(True)
-
-
-
 
 
 if __name__ == "__main__":
