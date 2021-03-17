@@ -7,12 +7,13 @@
 # WARNING! All changes made in this file will be lost!
 
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QImage
-from pyqtgraph import PlotWidget
-import numpy as np
-from process import *
-from sub_windows import *
+import pyqtgraph
+
+from main_process import *
+from main_frame import *
+from custome_dialog import *
+from my_thread import *
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -22,7 +23,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         MainWindow.setWindowIcon(QtGui.QIcon('Resourses/Icons/balance.svg'))
 
-        #-------------------------Infomation Box-----------------------#
+        # -------------------------Infomation Box-----------------------#
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox.setGeometry(QtCore.QRect(10, 10, 261, 371))
         self.groupBox.setObjectName("groupBox")
@@ -77,7 +78,7 @@ class Ui_MainWindow(object):
         self.label_8.setGeometry(QtCore.QRect(20, 270, 91, 21))
         self.label_8.setObjectName("label_8")
 
-        #---------------------------Frame Box------------------------#
+        # ---------------------------Frame Box------------------------#
         self.groupBox_2 = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox_2.setGeometry(QtCore.QRect(290, 10, 761, 431))
         self.groupBox_2.setObjectName("groupBox_2")
@@ -106,7 +107,7 @@ class Ui_MainWindow(object):
         self.sub_frame4.setText("")
         self.sub_frame4.setObjectName("sub_frame4")
 
-        #---------------------------Control Panel----------------------#
+        # ---------------------------Control Panel----------------------#
         self.groupBox_3 = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox_3.setGeometry(QtCore.QRect(10, 390, 261, 161))
         self.groupBox_3.setObjectName("groupBox_3")
@@ -123,8 +124,11 @@ class Ui_MainWindow(object):
         self.progressBar.setGeometry(QtCore.QRect(100, 63, 151, 20))
         self.progressBar.setProperty("value", 24)
         self.progressBar.setObjectName("progressBar")
+        self.progressBar.setMaximum(100)
+        self.progressBar.setStyleSheet("QProgressBar {border: 1px solid grey; border-radius:5px; padding:1px}")
+        self.progressBar.setValue(0)
 
-        #--------------------------Console Box-----------------------#
+        # --------------------------Console Box-----------------------#
         self.groupBox_4 = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox_4.setGeometry(QtCore.QRect(290, 439, 761, 111))
         self.groupBox_4.setObjectName("groupBox_4")
@@ -132,7 +136,7 @@ class Ui_MainWindow(object):
         self.console_list.setGeometry(QtCore.QRect(20, 20, 731, 81))
         self.console_list.setObjectName("console_list")
 
-        #----------------------------Menu----------------------------#
+        # ----------------------------Menu----------------------------#
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1081, 21))
@@ -247,16 +251,31 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.action_About)
 
         # --------------------------------Chart---------------------------------#
-        self.graphicsView = PlotWidget(self.groupBox_2)
+        self.graphicsView = pyqtgraph.PlotWidget(self.groupBox_2)
         self.graphicsView.setGeometry(QtCore.QRect(216, 20, 531, 381))
-        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
-        brush.setStyle(QtCore.Qt.NoBrush)
-        self.graphicsView.setBackgroundBrush(brush)
+        # brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
+        # brush.setStyle(QtCore.Qt.NoBrush)
+        # self.graphicsView.setBackgroundBrush(brush)
+        color = self.graphicsView.palette().color(QtGui.QPalette.Window)
+        self.graphicsView.setBackgroundBrush(color)
         self.graphicsView.setObjectName("graphicsView")
         self.graphicsView.setEnabled(True)
         self.graphicsView.setStyleSheet("background:white")
 
+        # self.graphicsView.setTitle("ĐỒ THỊ DAO ĐỘNG", color="b", size="30pt")
+        # self.graphicsView.setLabel('left', 'Khoang cach', units='cm')
+        # self.graphicsView.setLabel('bottom', 'Thoi gian', units='s')
+        self.graphicsView.setTitle("<span style=\"color:blue;font-size:18pt\">ĐỒ THỊ DAO ĐỘNG</span>")
+        styles = {'color': 'b', 'font-size': '15px', 'padding': '0'}
+        self.graphicsView.setLabel('left', 'Khoảng cách (cm)', **styles)
+        self.graphicsView.setLabel('bottom', 'Thời gian (s)', **styles)
+        self.graphicsView.showGrid(x=True, y=True)
+
+        # self.graphicsView.setXRange(-10, 10, padding=0)
+        self.graphicsView.setYRange(-5, 5, padding=0)
+
         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
+
 
 
         self.retranslateUi(MainWindow)
@@ -316,10 +335,28 @@ class Ui_MainWindow(object):
         self.action_Zoom_Out.setText(_translate("MainWindow", "&Zoom Out"))
         self.action_Zoom_Out.setShortcut(_translate("MainWindow", "Ctrl+-"))
 
-        #----------------------------Control panel action----------------------------------#
+        # ----------------------------Control panel action----------------------------------#
         self.run_btn.clicked.connect(self.run_btn_clicked)
         self.calib_btn.clicked.connect(self.calib_btn_clicked)
 
+    def set_progress_value(self, value):
+        self.progressBar.setValue(value)
+        if value == 100:
+            dlg = CustomDialog(type="completed", message="Quá trình xử lý hoàn tất")
+            if not dlg.exec_():
+                pass
+
+    def start_thread(self):
+        self.thread = MyThread()
+        self.thread.set_blue_HSV(self.main_frame.blue_HSV)
+        self.thread.set_laser_HSV(self.main_frame.laser_HSV)
+        self.thread.change_value_progress.connect(self.set_progress_value)
+        self.thread.update_console_list.connect(self.update_console_log)
+        self.thread.data_graph.connect(self.draw_graph)
+        self.thread.start()
+
+    def update_console_log(self, list):
+        self.console_list.addItem("{i} - {dis} cm".format(i=list[0], dis=list[1]))
 
     def show_sub_frame(self, frame1, frame2, frame3, frame4):
         self.sub_frame1.setPixmap(frame1.scaled(self.sub_frame1.size(), QtCore.Qt.KeepAspectRatio))
@@ -345,64 +382,66 @@ class Ui_MainWindow(object):
             self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
             return False
 
-    def draw_graph(self):
-        x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        y = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
-        self.graphicsView.plot(x, y)
+    def enable_graph(self):
+        self.console_list.addItem("Graph is enabled")
+        self.graphicsView.setGeometry(QtCore.QRect(216, 20, 531, 381))
+
+    def disable_graph(self):
+        self.console_list.addItem("Graph is disabled")
+        self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
+
+    def draw_graph(self, x, y):
+        # x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        # y = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
+        x = np.array(x)
+        y = np.array(y)
+        x = x / 30
+        y = y - y.mean()
+        self.clear_graph()
+        pen = pyqtgraph.mkPen(color=(255, 0, 0), width=1, style=QtCore.Qt.DashLine)
+        self.graphicsView.plot(x, y, pen=pen, symbol='o', symbolSize=5, symbolBrush=('b'))
 
     def clear_graph(self):
         self.graphicsView.clear()
 
-    def show_chart(self):
-        self.draw_graph()
+    def calib_btn_clicked(self):
+        # print("Press CALIBRATE button")
+        self.console_list.addItem("Press CALIBRATE button")
 
+        main_process = MainProcess(file_name="Inputs/example_video/1_1.mp4")
+        main_process.check_folder()
+        if main_process.get_index() == 0:
+            main_process.extract_frame()
+        self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.get_index()))
 
+        image = main_process.get_image(100)
+        self.main_frame.show_main_frame(image)
 
-
-
+        self.main_frame.is_laser = 0
+        self.console_list.addItem("CHON 2 THONG SO MAU SAC TREN HINH")
+        dlg = CustomDialog(
+            message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
+        if not dlg.exec_():
+            pass
 
     def run_btn_clicked(self):
+        self.start_thread()
         self.console_list.addItem("Blue color: " + str(self.main_frame.blue_HSV))
         self.console_list.addItem("Laser color: " + str(self.main_frame.laser_HSV))
         # print("Press RUN button")
         self.console_list.addItem("Press RUN button")
-        if self.is_chart() == True:
-            self.show_chart()
-        else:
-            main_process = MainProcess(file_name="Inputs/example_video/calibVideo.mp4")
-            main_process.set_blue_HSV(self.main_frame.blue_HSV)
-            main_process.set_laser_HSV(self.main_frame.blue_HSV)
-            main_process.extract_frame()
-            self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.index))
-            for i in range(1, main_process.index + 1):
-                main_process.process_image(i)
-                self.console_list.addItem("{i} - {dis} cm".format(i=i, dis=main_process.distance_x))
-
-
+        self.enable_graph()
 
         frame1, frame2, frame3, frame4 = self.get_sub_frame(1)
         self.show_sub_frame(frame1, frame2, frame3, frame4)
 
-    def calib_btn_clicked(self):
-        # print("Press CALIBRATE button")
-        self.console_list.addItem("Press CALIBRATE button")
-        image = cv2.imread("sample.jpg")
-        self.main_frame.show_main_frame(image)
-        self.main_frame.is_laser = 0
-        self.console_list.addItem("CHON 2 THONG SO MAU SAC TREN HINH")
-        dlg = CustomDialog(message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
-        if not dlg.exec_():
-            self.main_frame.setDisabled(True)
-
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec_())
-
-
-
