@@ -1,5 +1,6 @@
 from process_functions import *
 
+
 class MainProcess(Process):
 
     def __init__(self, file_name=""):
@@ -14,43 +15,62 @@ class MainProcess(Process):
         self.pre_line2 = 0
         self.pre_ver_coor = 0
         self.distance_x = 0
-        self.path_video = self.video_address.split('.')[0]
-        self.frameFolder_address = 'Outputs/' + self.path_video + '/frameFolder'
-        self.imageFolder_address = 'Outputs/' + self.path_video + '/imageFolder'
+
+    def get_folder_address(self):
+        path_video = ""
+        is_path = False
+        path = self.video_address.split('.')[0]
+        path = path.split('/')
+        for i in range(len(path) - 1):
+            if path[i] == 'Inputs':
+                is_path = True
+                continue
+            if is_path:
+                path_video += path[i] + '/'
+        path_video += path[-1]
+        print("Path_video_in_project:", path_video)
+
+        frame_folder = 'Outputs/' + path_video + '/frameFolder'
+        image_folder = 'Outputs/' + path_video + '/imageFolder'
+        excel_folder = 'Outputs/' + path_video + '/excelFolder'
+        return frame_folder, image_folder, excel_folder
 
     def check_folder(self):
-        if not os.path.exists(self.frameFolder_address):
-            os.makedirs(self.frameFolder_address)
-        if os.path.exists(self.imageFolder_address):
-            shutil.rmtree(self.imageFolder_address)
-        os.makedirs(self.imageFolder_address)
+        frame_folder, image_folder, excel_folder = self.get_folder_address()
+
+        if not os.path.exists(frame_folder):
+            os.makedirs(frame_folder)
+        if not os.path.exists(excel_folder):
+            os.makedirs(excel_folder)
+        if os.path.exists(image_folder):
+            shutil.rmtree(image_folder)
+        os.makedirs(image_folder)
+
+    def get_save_address(self):
+        _, _, excel_folder = self.get_folder_address()
+        save_address = excel_folder + '/time-distance.xlsx'
+        return save_address
 
     def get_index(self):
+        frame_folder, _, _ = self.get_folder_address()
         if self.index == 0:
-            path, dirs, files = next(os.walk(self.frameFolder_address))
+            path, dirs, files = next(os.walk(frame_folder))
             return len(files)
         else:
             return self.index
 
-    def get_image(self, ind_image):
-        frame_address = 'Outputs/' + self.path_video + '/frameFolder' + '/Frame' + str(
-            '{0:04}'.format(ind_image) + '.jpg')
-        return cv2.imread(frame_address)
+    def get_image_address(self, ind_image):
+        _, img_folder, _ = self.get_folder_address()
+        img_address = []
+        for filename in glob.glob(img_folder + '/*.jpg'):
+            img_address.append(filename)
+            # print(filename)
+        return img_address[ind_image]
 
-    def extract_frame(self):
-        cap = cv2.VideoCapture(self.video_address)
-        while True:
-            # Read a new frame
-            ok, frame = cap.read()
-            if not ok:
-                # Neu khong doc duoc tiep thi out
-                break
-            else:
-                self.index += 1
-                frame_address = 'Outputs/' + self.path_video + '/frameFolder' + '/Frame' + str('{0:04}'.format(
-                    self.index)) + '.jpg'
-                # print(frame_address)
-                cv2.imwrite(frame_address, frame)
+    def get_image(self, ind_image):
+        frame_folder, _, _ = self.get_folder_address()
+        frame_address = frame_folder + '/Frame' + str('{0:04}'.format(ind_image) + '.jpg')
+        return cv2.imread(frame_address)
 
     def process_image(self, ind_image):
         # STEP 1: Load image
@@ -100,10 +120,8 @@ class MainProcess(Process):
         self.distance_x = super().calculate_real_coordinate_of_laser_pointer(cX, cY, ver_coor)
         print("Khoang cach: " + str(self.distance_x))
 
-        image_address = 'Outputs/' + self.path_video + '/imageFolder' + '/Image' + str('{0:04}-{distance}'.format(
-            ind_image,
-            distance=self.distance_x
-        )) + '.jpg'
+        _, image_folder, _ = self.get_folder_address()
+        image_address = image_folder + '/Image' + str('{0:04}-{distance}'.format(ind_image, distance=self.distance_x)) + '.jpg'
         print(image_address)
 
         # STEP 6: Draw and Save image
@@ -125,3 +143,12 @@ class MainProcess(Process):
         # STEP 7: Calculate the distance change
         self.dis_array.append(self.distance_x)
         self.ind_array.append(ind_image)
+
+    def save_excel_file(self):
+        workbook = xlsxwriter.Workbook(self.get_save_address())
+        worksheet = workbook.add_worksheet('result')
+        col = 0
+        worksheet.write_row(0, col, ['Frame', 'Distance(cm)'])
+        for i in self.ind_array:
+            worksheet.write_row(i, col, [i, self.dis_array[i - 1]])
+        workbook.close()

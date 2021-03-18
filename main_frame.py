@@ -1,15 +1,16 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QImage
-# from pyqtgraph import PlotWidget
-#
-# from PyQt5.QtWidgets import (
-#     QApplication,
-#     QDialog,
-#     QDialogButtonBox,
-#     QLabel,
-#     QMainWindow,
-#     QPushButton,
-#     QVBoxLayout, )
+
+
+from PyQt5.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QFileDialog)
 
 
 from main_process import *

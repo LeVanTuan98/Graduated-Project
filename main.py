@@ -9,6 +9,9 @@
 
 import pyqtgraph
 
+import xlrd
+import openpyxl
+
 from main_process import *
 from main_frame import *
 from custome_dialog import *
@@ -261,7 +264,6 @@ class Ui_MainWindow(object):
         self.graphicsView.setObjectName("graphicsView")
         self.graphicsView.setEnabled(True)
         self.graphicsView.setStyleSheet("background:white")
-
         # self.graphicsView.setTitle("ĐỒ THỊ DAO ĐỘNG", color="b", size="30pt")
         # self.graphicsView.setLabel('left', 'Khoang cach', units='cm')
         # self.graphicsView.setLabel('bottom', 'Thoi gian', units='s')
@@ -270,14 +272,12 @@ class Ui_MainWindow(object):
         self.graphicsView.setLabel('left', 'Khoảng cách (cm)', **styles)
         self.graphicsView.setLabel('bottom', 'Thời gian (s)', **styles)
         self.graphicsView.showGrid(x=True, y=True)
-
         # self.graphicsView.setXRange(-10, 10, padding=0)
         self.graphicsView.setYRange(-5, 5, padding=0)
-
         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
 
-
-
+        # self.rel_path = ""
+        self.abs_path = ""
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -308,10 +308,10 @@ class Ui_MainWindow(object):
         self.menu_Help.setTitle(_translate("MainWindow", "&Help"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
         self.action_New.setText(_translate("MainWindow", "&New..."))
-        self.action_New.setToolTip(_translate("MainWindow", "Reset the current window"))
+        self.action_New.setToolTip(_translate("MainWindow", "Process the new video file"))
         self.action_New.setShortcut(_translate("MainWindow", "Ctrl+N"))
         self.action_Open.setText(_translate("MainWindow", "&Open..."))
-        self.action_Open.setToolTip(_translate("MainWindow", "Open file to process"))
+        self.action_Open.setToolTip(_translate("MainWindow", "Open the processed file"))
         self.action_Open.setShortcut(_translate("MainWindow", "Ctrl+O"))
         self.action_Save.setText(_translate("MainWindow", "&Save"))
         self.action_Save.setToolTip(_translate("MainWindow", "Save result"))
@@ -335,41 +335,135 @@ class Ui_MainWindow(object):
         self.action_Zoom_Out.setText(_translate("MainWindow", "&Zoom Out"))
         self.action_Zoom_Out.setShortcut(_translate("MainWindow", "Ctrl+-"))
 
+        #----------------------------Menu control-------------------------------------------#
+        self.action_Save.triggered.connect(self.do_save_action)
+        self.action_Save_excel_file.triggered.connect(self.do_save_action)
+        self.action_New.triggered.connect(self.do_new_action)
+        self.action_Exit.triggered.connect(sys.exit)
+        self.action_About.triggered.connect(lambda: self.show_about_action())
+
+
         # ----------------------------Control panel action----------------------------------#
         self.run_btn.clicked.connect(self.run_btn_clicked)
         self.calib_btn.clicked.connect(self.calib_btn_clicked)
+        self.scrollBar.valueChanged.connect(lambda: self.update_scrollbar_value())
+
+    def start_run_thread(self):
+        self.run_thread = RunThread()
+        self.run_thread.set_blue_HSV(self.main_frame.blue_HSV)
+        self.run_thread.set_laser_HSV(self.main_frame.laser_HSV)
+        self.run_thread.set_file_path(self.abs_path)
+        self.run_thread.change_value_progress.connect(self.set_progress_value)
+        self.run_thread.update_console_list.connect(self.update_console_log)
+        self.run_thread.data_graph.connect(self.draw_graph)
+        self.run_thread.total_image.connect(self.set_max_scrollbar)
+        self.run_thread.run_progess_finished.connect(self.show_finish_noti)
+        self.run_thread.start()
+
+    def start_calib_thread(self):
+        self.calib_thread = CalibThread()
+        self.calib_thread.set_file_path(self.abs_path)
+        self.calib_thread.change_value_progress.connect(self.set_progress_value)
+        self.calib_thread.calib_progess_finished.connect(self.do_calib_button)
+        self.calib_thread.start()
+
+    def show_about_action(self):
+        dlg = About()
+        if dlg.exec_():
+            pass
+
+    def update_scrollbar_value(self):
+        # getting current value
+        value = self.scrollBar.value()
+        self.show_sub_frame(value)
+
+    def get_info_patient(self):
+        data = [["Patient's ID ", self.id_txt.text()],
+                ["Patient's Name", self.name_txt.text()],
+                ["Patient's Age", self.age_txt.text()],
+                ["Patient's Sex", self.sex_opt.currentText()],
+                ["Patient's Height", self.height_txt.text()],
+                ["Patient's Weight", self.weight_txt.text()],
+                ["Patient's Address", self.add_txt.text()],
+                ["Notes", self.note_txt.text()]]
+        return data
+
+    def do_new_action(self):
+        self.abs_path, _ = QFileDialog.getOpenFileName(None, "Open Video File", 'Inputs/', "(*.mp4)")
+        print("Path got video:", self.abs_path)
+
+    def do_save_action(self):
+        self.is_file_path()
+        data = self.get_info_patient()
+        main_process = MainProcess(file_name=self.abs_path)
+        save_address = main_process.get_save_address()
+        # workbook = xlrd.open_workbook(save_address)
+        # worksheet = workbook.sheet_by_index(0)
+        # current_row = worksheet.nrows
+        # current_col = worksheet.ncols
+        # print(save_address)
+        wb = openpyxl.load_workbook(save_address)
+        ws = wb['result']
+        ws.cell(1, 4).value = "Patient's Infomation"
+        for i in range(np.shape(data)[0]):
+            ws.cell(i + 2, 4).value = str(data[i][0])
+            ws.cell(i + 2, 5).value = str(data[i][1])
+            # ws.write_row(4, i + 1, data[i])
+        wb.save(save_address)
+        wb.close()
+        dlg = CustomDialog(type="completed", message="Lưu thông tin thành công!")
+        if dlg.exec_():
+            pass
+
+    def show_finish_noti(self, status):
+        if status:
+            dlg = CustomDialog(type="completed", message="Quá trình xử lý hoàn tất!")
+            if dlg.exec_():
+                pass
+            self.show_sub_frame(1)
 
     def set_progress_value(self, value):
         self.progressBar.setValue(value)
-        if value == 100:
-            dlg = CustomDialog(type="completed", message="Quá trình xử lý hoàn tất")
-            if not dlg.exec_():
-                pass
 
-    def start_thread(self):
-        self.thread = MyThread()
-        self.thread.set_blue_HSV(self.main_frame.blue_HSV)
-        self.thread.set_laser_HSV(self.main_frame.laser_HSV)
-        self.thread.change_value_progress.connect(self.set_progress_value)
-        self.thread.update_console_list.connect(self.update_console_log)
-        self.thread.data_graph.connect(self.draw_graph)
-        self.thread.start()
+    def set_max_scrollbar(self, max_value):
+        self.scrollBar.setMaximum(max_value)
 
     def update_console_log(self, list):
         self.console_list.addItem("{i} - {dis} cm".format(i=list[0], dis=list[1]))
 
-    def show_sub_frame(self, frame1, frame2, frame3, frame4):
+    def do_calib_button(self, status):
+        if status:
+            main_process = MainProcess(file_name=self.abs_path)
+            dlg = CustomDialog(type="completed", message="Quá trình xử lý hoàn tất!\r\nTrich xuat {number_image} khung hinh"
+                               .format(number_image=main_process.get_index()))
+            if dlg.exec_():
+                pass
+            self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.get_index()))
+
+            image = main_process.get_image(100)
+            self.main_frame.show_main_frame(image)
+
+            self.main_frame.is_laser = 0
+            self.console_list.addItem("CHON 2 THONG SO MAU SAC TREN HINH")
+            dlg = CustomDialog(
+                message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
+            if not dlg.exec_():
+                pass
+
+    def show_sub_frame(self, ind_image):
+        frame1, frame2, frame3, frame4 = self.get_sub_frame(ind_image)
         self.sub_frame1.setPixmap(frame1.scaled(self.sub_frame1.size(), QtCore.Qt.KeepAspectRatio))
         self.sub_frame2.setPixmap(frame2.scaled(self.sub_frame2.size(), QtCore.Qt.KeepAspectRatio))
         self.sub_frame3.setPixmap(frame3.scaled(self.sub_frame3.size(), QtCore.Qt.KeepAspectRatio))
         self.sub_frame4.setPixmap(frame4.scaled(self.sub_frame4.size(), QtCore.Qt.KeepAspectRatio))
 
-    def get_sub_frame(self, start_P):
-        file_name = ""
-        frame1 = QtGui.QPixmap("sample.jpg")
-        frame2 = QtGui.QPixmap("sample.jpg")
-        frame3 = QtGui.QPixmap("sample.jpg")
-        frame4 = QtGui.QPixmap("sample.jpg")
+
+    def get_sub_frame(self, start_p):
+        main_process = MainProcess(file_name=self.abs_path)
+        frame1 = QtGui.QPixmap(main_process.get_image_address(start_p - 1))
+        frame2 = QtGui.QPixmap(main_process.get_image_address(start_p))
+        frame3 = QtGui.QPixmap(main_process.get_image_address(start_p + 1))
+        frame4 = QtGui.QPixmap(main_process.get_image_address(start_p + 2))
         return frame1, frame2, frame3, frame4
 
     def is_chart(self):
@@ -404,36 +498,30 @@ class Ui_MainWindow(object):
     def clear_graph(self):
         self.graphicsView.clear()
 
+    def is_file_path(self):
+        if os.path.exists(self.abs_path):
+            pass
+        else:
+            dlg = CustomDialog(
+                message="Chưa chọn tệp xử lý!", type='alert')
+            if dlg.exec_():
+                pass
+            self.do_new_action()
+
     def calib_btn_clicked(self):
+        self.is_file_path()
+        self.start_calib_thread()
         # print("Press CALIBRATE button")
         self.console_list.addItem("Press CALIBRATE button")
 
-        main_process = MainProcess(file_name="Inputs/example_video/1_1.mp4")
-        main_process.check_folder()
-        if main_process.get_index() == 0:
-            main_process.extract_frame()
-        self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.get_index()))
-
-        image = main_process.get_image(100)
-        self.main_frame.show_main_frame(image)
-
-        self.main_frame.is_laser = 0
-        self.console_list.addItem("CHON 2 THONG SO MAU SAC TREN HINH")
-        dlg = CustomDialog(
-            message="CHON 2 THONG SO MAU SAC \r\n1. Chon thong so cho vung mau xanh \r\n2. Chon thong so cho vung laser")
-        if not dlg.exec_():
-            pass
-
     def run_btn_clicked(self):
-        self.start_thread()
+        self.is_file_path()
+        self.start_run_thread()
         self.console_list.addItem("Blue color: " + str(self.main_frame.blue_HSV))
         self.console_list.addItem("Laser color: " + str(self.main_frame.laser_HSV))
         # print("Press RUN button")
         self.console_list.addItem("Press RUN button")
         self.enable_graph()
-
-        frame1, frame2, frame3, frame4 = self.get_sub_frame(1)
-        self.show_sub_frame(frame1, frame2, frame3, frame4)
 
 
 if __name__ == "__main__":
