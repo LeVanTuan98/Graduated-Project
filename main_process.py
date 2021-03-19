@@ -19,16 +19,29 @@ class MainProcess(Process):
     def get_folder_address(self):
         path_video = ""
         is_path = False
-        path = self.video_address.split('.')[0]
-        path = path.split('/')
-        for i in range(len(path) - 1):
-            if path[i] == 'Inputs':
-                is_path = True
-                continue
-            if is_path:
-                path_video += path[i] + '/'
-        path_video += path[-1]
-        print("Path_video_in_project:", path_video)
+        path = self.video_address.split('.')
+        if path[1] == "mp4":
+            path = path[0].split('/')
+            for i in range(len(path) - 1):
+                if path[i] == 'Inputs':
+                    is_path = True
+                    continue
+                if is_path:
+                    path_video += path[i] + '/'
+            path_video += path[-1]
+        # print("Path_video_in_project:", path_video)
+
+        # elif path[1] == "jpg":
+        #     is_path = False
+        #     path = path[0].split('/')
+        #     for i in range(len(path) - 3):
+        #         if path[i] == 'Outputs':
+        #             is_path = True
+        #             continue
+        #         if is_path:
+        #             path_video += path[i] + '/'
+        #     path_video += path[-3]
+        #     # print(path_video)
 
         frame_folder = 'Outputs/' + path_video + '/frameFolder'
         image_folder = 'Outputs/' + path_video + '/imageFolder'
@@ -67,14 +80,18 @@ class MainProcess(Process):
             # print(filename)
         return img_address[ind_image]
 
-    def get_image(self, ind_image):
+    # def get_image(self, ind_image):
+    #     _, image_folder, _ = self.get_folder_address()
+    #     image_address = image_folder
+
+    def get_frame(self, ind_frame):
         frame_folder, _, _ = self.get_folder_address()
-        frame_address = frame_folder + '/Frame' + str('{0:04}'.format(ind_image) + '.jpg')
+        frame_address = frame_folder + '/Frame' + str('{0:04}'.format(ind_frame) + '.jpg')
         return cv2.imread(frame_address)
 
     def process_image(self, ind_image):
         # STEP 1: Load image
-        original_image = self.get_image(ind_image)
+        original_image = self.get_frame(ind_image)
         # cv2.imshow("Original image", cv2.resize(src=original_image, dsize=(500, 200)))
 
         # STEP 2: Detect WHITE frame
@@ -123,6 +140,7 @@ class MainProcess(Process):
         _, image_folder, _ = self.get_folder_address()
         image_address = image_folder + '/Image' + str('{0:04}-{distance}'.format(ind_image, distance=self.distance_x)) + '.jpg'
         print(image_address)
+
 
         # STEP 6: Draw and Save image
         final_image = super().shift_image(white_frame, translation)

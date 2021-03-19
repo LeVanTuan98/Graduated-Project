@@ -89,23 +89,24 @@ class Ui_MainWindow(object):
         self.scrollBar.setGeometry(QtCore.QRect(10, 29, 20, 371))
         self.scrollBar.setOrientation(QtCore.Qt.Vertical)
         self.scrollBar.setObjectName("scrollBar")
+        self.scrollBar.setMaximum(0)
         self.main_frame = MainFrame(self.groupBox_2)
         self.main_frame.setGeometry(QtCore.QRect(216, 20, 531, 381))
         self.main_frame.setText("")
         self.main_frame.setObjectName("main_frame")
-        self.sub_frame1 = QtWidgets.QLabel(self.groupBox_2)
+        self.sub_frame1 = SubFrame(self.groupBox_2)
         self.sub_frame1.setGeometry(QtCore.QRect(50, 20, 141, 71))
         self.sub_frame1.setText("")
         self.sub_frame1.setObjectName("sub_frame1")
-        self.sub_frame2 = QtWidgets.QLabel(self.groupBox_2)
+        self.sub_frame2 = SubFrame(self.groupBox_2)
         self.sub_frame2.setGeometry(QtCore.QRect(50, 110, 141, 71))
         self.sub_frame2.setText("")
         self.sub_frame2.setObjectName("sub_frame2")
-        self.sub_frame3 = QtWidgets.QLabel(self.groupBox_2)
+        self.sub_frame3 = SubFrame(self.groupBox_2)
         self.sub_frame3.setGeometry(QtCore.QRect(50, 200, 141, 81))
         self.sub_frame3.setText("")
         self.sub_frame3.setObjectName("sub_frame3")
-        self.sub_frame4 = QtWidgets.QLabel(self.groupBox_2)
+        self.sub_frame4 = SubFrame(self.groupBox_2)
         self.sub_frame4.setGeometry(QtCore.QRect(50, 300, 141, 81))
         self.sub_frame4.setText("")
         self.sub_frame4.setObjectName("sub_frame4")
@@ -146,8 +147,8 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName("menubar")
         self.menu_File = QtWidgets.QMenu(self.menubar)
         self.menu_File.setObjectName("menu_File")
-        self.menu_Open_Recent = QtWidgets.QMenu(self.menu_File)
-        self.menu_Open_Recent.setObjectName("menu_Open_Recent")
+        self.menu_Open_Options = QtWidgets.QMenu(self.menu_File)
+        self.menu_Open_Options.setObjectName("menu_Open_Options")
         self.menu_Save_Options = QtWidgets.QMenu(self.menu_File)
         self.menu_Save_Options.setObjectName("menu_Save_Options")
         self.menu_Edit = QtWidgets.QMenu(self.menubar)
@@ -181,8 +182,10 @@ class Ui_MainWindow(object):
         icon3.addPixmap(QtGui.QPixmap("Resourses/Icons/exit.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.action_Exit.setIcon(icon3)
         self.action_Exit.setObjectName("action_Exit")
-        self.action_Open_All = QtWidgets.QAction(MainWindow)
-        self.action_Open_All.setObjectName("action_Open_All")
+        self.action_Open_image_folder = QtWidgets.QAction(MainWindow)
+        self.action_Open_image_folder.setObjectName("action_Open_image_folder")
+        self.action_Open_chart = QtWidgets.QAction(MainWindow)
+        self.action_Open_chart.setObjectName("action_Open_chart")
         self.action_Copy = QtWidgets.QAction(MainWindow)
         icon4 = QtGui.QIcon()
         icon4.addPixmap(QtGui.QPixmap("Resourses/Icons/copy.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -219,13 +222,14 @@ class Ui_MainWindow(object):
         icon9.addPixmap(QtGui.QPixmap("Resourses/Icons/zoomout.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.action_Zoom_Out.setIcon(icon9)
         self.action_Zoom_Out.setObjectName("action_Zoom_Out")
-        self.menu_Open_Recent.addAction(self.action_Open_All)
+        self.menu_Open_Options.addAction(self.action_Open_image_folder)
+        self.menu_Open_Options.addAction(self.action_Open_chart)
         self.menu_Save_Options.addAction(self.action_Save_excel_file)
         self.menu_Save_Options.addAction(self.action_Save_chart)
         self.menu_File.addAction(self.action_New)
         self.menu_File.addSeparator()
         self.menu_File.addAction(self.action_Open)
-        self.menu_File.addAction(self.menu_Open_Recent.menuAction())
+        self.menu_File.addAction(self.menu_Open_Options.menuAction())
         self.menu_File.addSeparator()
         self.menu_File.addAction(self.action_Save)
         self.menu_File.addAction(self.menu_Save_Options.menuAction())
@@ -278,6 +282,7 @@ class Ui_MainWindow(object):
 
         # self.rel_path = ""
         self.abs_path = ""
+        self.mode = 0 # mode: 0(video), 1(image)
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -302,7 +307,7 @@ class Ui_MainWindow(object):
         self.chart_rbtn.setText(_translate("MainWindow", "Show chart"))
         self.groupBox_4.setTitle(_translate("MainWindow", "Console Log"))
         self.menu_File.setTitle(_translate("MainWindow", "&File"))
-        self.menu_Open_Recent.setTitle(_translate("MainWindow", "&Open Recent"))
+        self.menu_Open_Options.setTitle(_translate("MainWindow", "&Open Options"))
         self.menu_Save_Options.setTitle(_translate("MainWindow", "&Save Options"))
         self.menu_Edit.setTitle(_translate("MainWindow", "&Edit"))
         self.menu_Help.setTitle(_translate("MainWindow", "&Help"))
@@ -319,7 +324,8 @@ class Ui_MainWindow(object):
         self.action_Exit.setText(_translate("MainWindow", "&Exit"))
         self.action_Exit.setToolTip(_translate("MainWindow", "Exit the window"))
         self.action_Exit.setShortcut(_translate("MainWindow", "Ctrl+E"))
-        self.action_Open_All.setText(_translate("MainWindow", "&Open All"))
+        self.action_Open_image_folder.setText(_translate("MainWindow", "&Open Image Folder"))
+        self.action_Open_chart.setText(_translate("MainWindow", "&Open Chart"))
         self.action_Copy.setText(_translate("MainWindow", "&Copy"))
         self.action_Copy.setShortcut(_translate("MainWindow", "Ctrl+C"))
         self.action_Paste.setText(_translate("MainWindow", "&Paste"))
@@ -338,15 +344,27 @@ class Ui_MainWindow(object):
         #----------------------------Menu control-------------------------------------------#
         self.action_Save.triggered.connect(self.do_save_action)
         self.action_Save_excel_file.triggered.connect(self.do_save_action)
+
         self.action_New.triggered.connect(self.do_new_action)
         self.action_Exit.triggered.connect(sys.exit)
         self.action_About.triggered.connect(lambda: self.show_about_action())
+
+        self.action_Open.triggered.connect(self.do_open_action)
+        self.action_Open_image_folder.triggered.connect(self.do_open_image_action)
+        self.action_Open_chart.triggered.connect(self.do_open_chart_action)
 
 
         # ----------------------------Control panel action----------------------------------#
         self.run_btn.clicked.connect(self.run_btn_clicked)
         self.calib_btn.clicked.connect(self.calib_btn_clicked)
         self.scrollBar.valueChanged.connect(lambda: self.update_scrollbar_value())
+
+        #-------------------------------Frame Box-------------------------------------------#
+        self.sub_frame1.clicked.connect(self.show_subframe_to_mainframe)
+        self.sub_frame2.clicked.connect(self.show_subframe_to_mainframe)
+        self.sub_frame3.clicked.connect(self.show_subframe_to_mainframe)
+        self.sub_frame4.clicked.connect(self.show_subframe_to_mainframe)
+
 
     def start_run_thread(self):
         self.run_thread = RunThread()
@@ -375,7 +393,14 @@ class Ui_MainWindow(object):
     def update_scrollbar_value(self):
         # getting current value
         value = self.scrollBar.value()
+        # print(value)
         self.show_sub_frame(value)
+
+    def set_progress_value(self, value):
+        self.progressBar.setValue(value)
+
+    def set_max_scrollbar(self, max_value):
+        self.scrollBar.setMaximum(max_value - 4)
 
     def get_info_patient(self):
         data = [["Patient's ID ", self.id_txt.text()],
@@ -391,6 +416,104 @@ class Ui_MainWindow(object):
     def do_new_action(self):
         self.abs_path, _ = QFileDialog.getOpenFileName(None, "Open Video File", 'Inputs/', "(*.mp4)")
         print("Path got video:", self.abs_path)
+        self.mode = 0
+        # self.enable_graph()
+        self.clear_frame_box()
+        self.disable_graph()
+        self.set_infomation_box(["", "", "", "Male", "", "", "", ""])
+        self.console_list.clear()
+
+
+    def do_open_action(self):
+        self.abs_path = QFileDialog.getExistingDirectory(None, "Open folder", "Outputs/")
+        print("Path got folder:", self.abs_path)
+        self.console_list.clear()
+        self.mode = 1
+        self.set_max_scrollbar(self.get_image_address_in_folder(self.get_relative_path(), 0)[1])
+        self.show_sub_frame(0)
+        excel_file_address = self.get_relative_path(option="excel") + '/time-distance.xlsx'
+        print(excel_file_address)
+        x, y = self.open_excel_file(excel_file_address)
+        self.enable_graph()
+        self.draw_graph(x, y)
+
+    def do_open_image_action(self):
+        self.abs_path = QFileDialog.getExistingDirectory(None, "Open folder", "Outputs/")
+        print("Path got folder:", self.abs_path)
+        self.console_list.clear()
+        self.disable_graph()
+        self.mode = 1
+        self.set_max_scrollbar(self.get_image_address_in_folder(self.get_relative_path(), 0)[1])
+        image = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), 0)[0])
+        self.main_frame.setPixmap(image.scaled(self.main_frame.size(), QtCore.Qt.KeepAspectRatio))
+        self.show_sub_frame(0)
+
+    def do_open_chart_action(self):
+        excel_file_address, _ = QFileDialog.getOpenFileName(None, "Open Excell File", 'OutPuts/', "(time-distance.xlsx)")
+        print("Path got video:", self.abs_path)
+        self.console_list.clear()
+        self.mode = 1
+        x, y = self.open_excel_file(excel_file_address)
+        self.enable_graph()
+        self.clear_frame_box()
+        self.draw_graph(x, y)
+
+    def open_excel_file(self, excel_file_address):
+        # To open Workbook
+        wb = xlrd.open_workbook(excel_file_address)
+        sheet = wb.sheet_by_index(0)
+        dis_array = []
+        time_array = []
+        info_list = []
+        info_list.append(sheet.cell_value(1, 4))
+        info_list.append(sheet.cell_value(2, 4))
+        info_list.append(sheet.cell_value(3, 4))
+        info_list.append(sheet.cell_value(4, 4))
+        info_list.append(sheet.cell_value(5, 4))
+        info_list.append(sheet.cell_value(6, 4))
+        info_list.append(sheet.cell_value(7, 4))
+        info_list.append(sheet.cell_value(8, 4))
+        self.set_infomation_box(info_list)
+        # For row 0 and column 0
+        for i in range(1, sheet.nrows):
+            time_array.append(sheet.cell_value(i, 0))
+            dis_array.append(sheet.cell_value(i, 1))
+        return time_array, dis_array
+
+    def set_infomation_box(self, list):
+        self.id_txt.setText(str(list[0]))
+        self.name_txt.setText(str(list[1]))
+        self.age_txt.setText(str(list[2]))
+        self.sex_opt.setCurrentIndex(0 if list[3] == 'Male' else 1)
+        self.height_txt.setText(str(list[4]))
+        self.weight_txt.setText(str(list[5]))
+        self.add_txt.setText(str(list[6]))
+        self.note_txt.setText(str(list[7]))
+
+    def get_relative_path(self, option=None):
+        path_video = "Outputs/"
+        is_path = False
+        path = self.abs_path.split('/')
+        for i in range(len(path) - 1):
+            if path[i] == 'Outputs':
+                is_path = True
+                continue
+            if is_path:
+                path_video += path[i] + '/'
+        if option == "excel":
+            path_video += "excelFolder"
+        else:
+            path_video += path[-1]
+        # print(path_video = "Outputs/exampole/1_1/imageFolder)
+        return path_video
+
+    def get_image_address_in_folder(self, path_folder, ind_image):
+        img_address = []
+        for filename in glob.glob(path_folder + '/*.jpg'):
+            img_address.append(filename)
+            # print(filename)
+        return [img_address[ind_image], len(img_address)]
+
 
     def do_save_action(self):
         self.is_file_path()
@@ -422,12 +545,6 @@ class Ui_MainWindow(object):
                 pass
             self.show_sub_frame(1)
 
-    def set_progress_value(self, value):
-        self.progressBar.setValue(value)
-
-    def set_max_scrollbar(self, max_value):
-        self.scrollBar.setMaximum(max_value)
-
     def update_console_log(self, list):
         self.console_list.addItem("{i} - {dis} cm".format(i=list[0], dis=list[1]))
 
@@ -440,7 +557,7 @@ class Ui_MainWindow(object):
                 pass
             self.console_list.addItem("Trich xuat {number_image} khung hinh".format(number_image=main_process.get_index()))
 
-            image = main_process.get_image(100)
+            image = main_process.get_frame(50)
             self.main_frame.show_main_frame(image)
 
             self.main_frame.is_laser = 0
@@ -457,13 +574,42 @@ class Ui_MainWindow(object):
         self.sub_frame3.setPixmap(frame3.scaled(self.sub_frame3.size(), QtCore.Qt.KeepAspectRatio))
         self.sub_frame4.setPixmap(frame4.scaled(self.sub_frame4.size(), QtCore.Qt.KeepAspectRatio))
 
+    def clear_frame_box(self):
+        self.sub_frame1.setText(" ")
+        self.sub_frame2.setText(" ")
+        self.sub_frame3.setText(" ")
+        self.sub_frame4.setText(" ")
+        self.main_frame.setText(" ")
+
+    def show_subframe_to_mainframe(self, ind_image):
+        self.disable_graph()
+        image_address = ""
+        if self.mode == 0:
+            main_process = MainProcess(file_name=self.abs_path)
+            image_address = main_process.get_image_address(ind_image)
+        elif self.mode == 1:
+            image_address = self.get_image_address_in_folder(self.get_relative_path(), ind_image)[0]
+
+        image = QtGui.QPixmap(image_address)
+        self.console_list.addItem(image_address)
+        self.main_frame.setPixmap(image.scaled(self.main_frame.size(), QtCore.Qt.KeepAspectRatio))
 
     def get_sub_frame(self, start_p):
-        main_process = MainProcess(file_name=self.abs_path)
-        frame1 = QtGui.QPixmap(main_process.get_image_address(start_p - 1))
-        frame2 = QtGui.QPixmap(main_process.get_image_address(start_p))
-        frame3 = QtGui.QPixmap(main_process.get_image_address(start_p + 1))
-        frame4 = QtGui.QPixmap(main_process.get_image_address(start_p + 2))
+        self.sub_frame1.set_index_image(start_p)
+        self.sub_frame2.set_index_image(start_p + 1)
+        self.sub_frame3.set_index_image(start_p + 2)
+        self.sub_frame4.set_index_image(start_p + 3)
+        if self.mode == 0:
+            main_process = MainProcess(file_name=self.abs_path)
+            frame1 = QtGui.QPixmap(main_process.get_image_address(start_p))
+            frame2 = QtGui.QPixmap(main_process.get_image_address(start_p + 1))
+            frame3 = QtGui.QPixmap(main_process.get_image_address(start_p + 2))
+            frame4 = QtGui.QPixmap(main_process.get_image_address(start_p + 3))
+        elif self.mode == 1:
+            frame1 = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), start_p)[0])
+            frame2 = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), start_p + 1)[0])
+            frame3 = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), start_p + 2)[0])
+            frame4 = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), start_p + 3)[0])
         return frame1, frame2, frame3, frame4
 
     def is_chart(self):
@@ -477,11 +623,11 @@ class Ui_MainWindow(object):
             return False
 
     def enable_graph(self):
-        self.console_list.addItem("Graph is enabled")
+        # self.console_list.addItem("Graph is enabled")
         self.graphicsView.setGeometry(QtCore.QRect(216, 20, 531, 381))
 
     def disable_graph(self):
-        self.console_list.addItem("Graph is disabled")
+        # self.console_list.addItem("Graph is disabled")
         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
 
     def draw_graph(self, x, y):
@@ -509,19 +655,22 @@ class Ui_MainWindow(object):
             self.do_new_action()
 
     def calib_btn_clicked(self):
-        self.is_file_path()
-        self.start_calib_thread()
-        # print("Press CALIBRATE button")
-        self.console_list.addItem("Press CALIBRATE button")
+        if self.mode == 0:
+            self.is_file_path()
+            self.start_calib_thread()
+            # print("Press CALIBRATE button")
+            self.console_list.addItem("-----------------CALIBRATE----------------")
+            self.console_list.addItem("Đang trích xuất khung hình")
 
     def run_btn_clicked(self):
-        self.is_file_path()
-        self.start_run_thread()
-        self.console_list.addItem("Blue color: " + str(self.main_frame.blue_HSV))
-        self.console_list.addItem("Laser color: " + str(self.main_frame.laser_HSV))
-        # print("Press RUN button")
-        self.console_list.addItem("Press RUN button")
-        self.enable_graph()
+        if self.mode == 0:
+            self.is_file_path()
+            self.start_run_thread()
+            self.console_list.addItem("Blue color: " + str(self.main_frame.blue_HSV))
+            self.console_list.addItem("Laser color: " + str(self.main_frame.laser_HSV))
+            # print("Press RUN button")
+            self.console_list.addItem("----------------------RUN button-----------------")
+            self.enable_graph()
 
 
 if __name__ == "__main__":

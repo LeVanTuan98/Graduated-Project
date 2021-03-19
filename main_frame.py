@@ -91,3 +91,22 @@ class MainFrame(QtWidgets.QLabel):
         bytes_per_line = 3 * width
         q_img = QImage(cv_img.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
         return q_img
+
+
+class SubFrame(QtWidgets.QLabel):
+
+    def __init__(self, object):
+        super().__init__(object)
+        self.index = 0
+
+    clicked = QtCore.pyqtSignal(int)
+
+    def mousePressEvent(self, event):
+        if event.type() == QtCore.QEvent.MouseButtonDblClick:
+            self.clicked.emit(self.index)
+
+    def set_index_image(self, ind_image):
+        self.index = ind_image
+
+    def get_index_image(self):
+        return self.index
