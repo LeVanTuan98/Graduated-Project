@@ -121,9 +121,18 @@ class Ui_MainWindow(object):
         self.run_btn = QtWidgets.QPushButton(self.groupBox_3)
         self.run_btn.setGeometry(QtCore.QRect(20, 60, 61, 23))
         self.run_btn.setObjectName("run_btn")
-        self.chart_rbtn = QtWidgets.QRadioButton(self.groupBox_3)
-        self.chart_rbtn.setGeometry(QtCore.QRect(110, 20, 82, 17))
-        self.chart_rbtn.setObjectName("chart_rbtn")
+        # self.chart_rbtn = QtWidgets.QRadioButton(self.groupBox_3)
+        # self.chart_rbtn.setGeometry(QtCore.QRect(110, 20, 82, 17))
+        # self.chart_rbtn.setObjectName("chart_rbtn")
+        self.label_9 = QtWidgets.QLabel(self.groupBox_3)
+        self.label_9.setGeometry(QtCore.QRect(110, 20, 65, 17))
+        self.label_9.setObjectName("label_9")
+        self.direc_opt = QtWidgets.QComboBox(self.groupBox_3)
+        self.direc_opt.setGeometry(QtCore.QRect(180, 20, 50, 17))
+        self.direc_opt.setObjectName("direc_opt")
+        self.direc_opt.addItem("")
+        self.direc_opt.addItem("")
+
         self.progressBar = QtWidgets.QProgressBar(self.groupBox_3)
         self.progressBar.setGeometry(QtCore.QRect(100, 63, 151, 20))
         self.progressBar.setProperty("value", 24)
@@ -184,8 +193,11 @@ class Ui_MainWindow(object):
         self.action_Exit.setObjectName("action_Exit")
         self.action_Open_image_folder = QtWidgets.QAction(MainWindow)
         self.action_Open_image_folder.setObjectName("action_Open_image_folder")
-        self.action_Open_chart = QtWidgets.QAction(MainWindow)
-        self.action_Open_chart.setObjectName("action_Open_chart")
+        # self.action_Open_chart = QtWidgets.QAction(MainWindow)
+        # self.action_Open_chart.setObjectName("action_Open_chart")
+        self.menu_Open_chart = QtWidgets.QMenu(MainWindow)
+        self.menu_Open_chart.setObjectName("menu_Open_chart")
+
         self.action_Copy = QtWidgets.QAction(MainWindow)
         icon4 = QtGui.QIcon()
         icon4.addPixmap(QtGui.QPixmap("Resourses/Icons/copy.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -223,13 +235,25 @@ class Ui_MainWindow(object):
         self.action_Zoom_Out.setIcon(icon9)
         self.action_Zoom_Out.setObjectName("action_Zoom_Out")
         self.menu_Open_Options.addAction(self.action_Open_image_folder)
-        self.menu_Open_Options.addAction(self.action_Open_chart)
+        # self.menu_Open_Options.addAction(self.action_Open_chart)
+        self.menu_Open_Options.addAction(self.menu_Open_chart.menuAction())
         self.menu_Save_Options.addAction(self.action_Save_excel_file)
         self.menu_Save_Options.addAction(self.action_Save_chart)
         self.menu_File.addAction(self.action_New)
         self.menu_File.addSeparator()
         self.menu_File.addAction(self.action_Open)
         self.menu_File.addAction(self.menu_Open_Options.menuAction())
+
+        self.action_Open_X = QtWidgets.QAction(MainWindow)
+        self.action_Open_X.setObjectName("action_Open_X")
+        self.action_Open_Y = QtWidgets.QAction(MainWindow)
+        self.action_Open_Y.setObjectName("action_Open_Y")
+        self.action_Open_XY = QtWidgets.QAction(MainWindow)
+        self.action_Open_XY.setObjectName("action_Open_XY")
+        self.menu_Open_chart.addAction(self.action_Open_X)
+        self.menu_Open_chart.addAction(self.action_Open_Y)
+        self.menu_Open_chart.addAction(self.action_Open_XY)
+
         self.menu_File.addSeparator()
         self.menu_File.addAction(self.action_Save)
         self.menu_File.addAction(self.menu_Save_Options.menuAction())
@@ -304,7 +328,10 @@ class Ui_MainWindow(object):
         self.groupBox_3.setTitle(_translate("MainWindow", "Control Panel"))
         self.calib_btn.setText(_translate("MainWindow", "Calibrate"))
         self.run_btn.setText(_translate("MainWindow", "Run..."))
-        self.chart_rbtn.setText(_translate("MainWindow", "Show chart"))
+        # self.chart_rbtn.setText(_translate("MainWindow", "Show chart"))
+        self.label_9.setText(_translate("MainWindow", "Direction: "))
+        self.direc_opt.setItemText(0, _translate("MainWindow", "X"))
+        self.direc_opt.setItemText(1, _translate("MainWindow", "Y"))
         self.groupBox_4.setTitle(_translate("MainWindow", "Console Log"))
         self.menu_File.setTitle(_translate("MainWindow", "&File"))
         self.menu_Open_Options.setTitle(_translate("MainWindow", "&Open Options"))
@@ -324,8 +351,13 @@ class Ui_MainWindow(object):
         self.action_Exit.setText(_translate("MainWindow", "&Exit"))
         self.action_Exit.setToolTip(_translate("MainWindow", "Exit the window"))
         self.action_Exit.setShortcut(_translate("MainWindow", "Ctrl+E"))
+
         self.action_Open_image_folder.setText(_translate("MainWindow", "&Open Image Folder"))
-        self.action_Open_chart.setText(_translate("MainWindow", "&Open Chart"))
+        self.menu_Open_chart.setTitle(_translate("MainWindow", "&Open Chart"))
+        self.action_Open_X.setText(_translate("MainWindow", "X"))
+        self.action_Open_Y.setText(_translate("MainWindow", "Y"))
+        self.action_Open_XY.setText(_translate("MainWindow", "X-Y"))
+
         self.action_Copy.setText(_translate("MainWindow", "&Copy"))
         self.action_Copy.setShortcut(_translate("MainWindow", "Ctrl+C"))
         self.action_Paste.setText(_translate("MainWindow", "&Paste"))
@@ -351,7 +383,9 @@ class Ui_MainWindow(object):
 
         self.action_Open.triggered.connect(self.do_open_action)
         self.action_Open_image_folder.triggered.connect(self.do_open_image_action)
-        self.action_Open_chart.triggered.connect(self.do_open_chart_action)
+        self.action_Open_X.triggered.connect(self.do_open_chart_action_X)
+        self.action_Open_Y.triggered.connect(self.do_open_chart_action_Y)
+        self.action_Open_XY.triggered.connect(self.do_open_chart_action_XY)
 
 
         # ----------------------------Control panel action----------------------------------#
@@ -368,6 +402,7 @@ class Ui_MainWindow(object):
 
     def start_run_thread(self):
         self.run_thread = RunThread()
+        self.run_thread.set_direction(self.direc_opt.currentIndex())
         self.run_thread.set_blue_HSV(self.main_frame.blue_HSV)
         self.run_thread.set_laser_HSV(self.main_frame.laser_HSV)
         self.run_thread.set_file_path(self.abs_path)
@@ -423,6 +458,15 @@ class Ui_MainWindow(object):
         self.set_infomation_box(["", "", "", "Male", "", "", "", ""])
         self.console_list.clear()
 
+    def do_open_chart_action_X(self):
+        self.do_open_chart_action(0)
+
+    def do_open_chart_action_Y(self):
+        self.do_open_chart_action(1)
+
+    def do_open_chart_action_XY(self):
+        self.do_open_chart_action(2)
+
 
     def do_open_action(self):
         self.abs_path = QFileDialog.getExistingDirectory(None, "Open folder", "Outputs/")
@@ -433,9 +477,9 @@ class Ui_MainWindow(object):
         self.show_sub_frame(0)
         excel_file_address = self.get_relative_path(option="excel") + '/time-distance.xlsx'
         print(excel_file_address)
-        x, y = self.open_excel_file(excel_file_address)
+        x, y = self.open_excel_file(excel_file_address, 2)
         self.enable_graph()
-        self.draw_graph(x, y)
+        self.draw_graph(x, y, 2)
 
     def do_open_image_action(self):
         self.abs_path = QFileDialog.getExistingDirectory(None, "Open folder", "Outputs/")
@@ -448,37 +492,50 @@ class Ui_MainWindow(object):
         self.main_frame.setPixmap(image.scaled(self.main_frame.size(), QtCore.Qt.KeepAspectRatio))
         self.show_sub_frame(0)
 
-    def do_open_chart_action(self):
+    def do_open_chart_action(self, direction):
         excel_file_address, _ = QFileDialog.getOpenFileName(None, "Open Excell File", 'OutPuts/', "(time-distance.xlsx)")
         print("Path got video:", self.abs_path)
         self.console_list.clear()
         self.mode = 1
-        x, y = self.open_excel_file(excel_file_address)
+        x, y = self.open_excel_file(excel_file_address, direction)
         self.enable_graph()
         self.clear_frame_box()
-        self.draw_graph(x, y)
+        self.draw_graph(x, y, direction)
 
-    def open_excel_file(self, excel_file_address):
+    def open_excel_file(self, excel_file_address, direction):
         # To open Workbook
         wb = xlrd.open_workbook(excel_file_address)
         sheet = wb.sheet_by_index(0)
-        dis_array = []
-        time_array = []
-        info_list = []
-        info_list.append(sheet.cell_value(1, 4))
-        info_list.append(sheet.cell_value(2, 4))
-        info_list.append(sheet.cell_value(3, 4))
-        info_list.append(sheet.cell_value(4, 4))
-        info_list.append(sheet.cell_value(5, 4))
-        info_list.append(sheet.cell_value(6, 4))
-        info_list.append(sheet.cell_value(7, 4))
-        info_list.append(sheet.cell_value(8, 4))
-        self.set_infomation_box(info_list)
+        a1_array = []
+        a2_array = []
+        try:
+            info_list = []
+            info_list.append(sheet.cell_value(1, 4))
+            info_list.append(sheet.cell_value(2, 4))
+            info_list.append(sheet.cell_value(3, 4))
+            info_list.append(sheet.cell_value(4, 4))
+            info_list.append(sheet.cell_value(5, 4))
+            info_list.append(sheet.cell_value(6, 4))
+            info_list.append(sheet.cell_value(7, 4))
+            info_list.append(sheet.cell_value(8, 4))
+            self.set_infomation_box(info_list)
+        except:
+            print("Have no information's patient")
+            self.set_infomation_box(["", "", "", "Male", "", "", "", ""])
         # For row 0 and column 0
+        if direction == 0: # X
+            a1 = 0
+            a2 = 1
+        elif direction == 1: # Y
+            a1 = 0
+            a2 = 2
+        elif direction == 2: # XY
+            a1 = 1
+            a2 = 2
         for i in range(1, sheet.nrows):
-            time_array.append(sheet.cell_value(i, 0))
-            dis_array.append(sheet.cell_value(i, 1))
-        return time_array, dis_array
+            a1_array.append(sheet.cell_value(i, a1))
+            a2_array.append(sheet.cell_value(i, a2))
+        return a1_array, a2_array
 
     def set_infomation_box(self, list):
         self.id_txt.setText(str(list[0]))
@@ -630,15 +687,19 @@ class Ui_MainWindow(object):
         # self.console_list.addItem("Graph is disabled")
         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
 
-    def draw_graph(self, x, y):
+    def draw_graph(self, x, y, direction):
         # x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         # y = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
         x = np.array(x)
         y = np.array(y)
-        x = x / 30
-        y = y - y.mean()
+        if direction == 0 or direction == 1:
+            x = x / 30
+            y = y - y.mean()
+        elif direction == 2:
+            x = x - x.mean()
+            y = y - y.mean()
         self.clear_graph()
-        pen = pyqtgraph.mkPen(color=(255, 0, 0), width=1, style=QtCore.Qt.DashLine)
+        pen = pyqtgraph.mkPen(color=(255, 0, 0), width=0, style=QtCore.Qt.DashLine)
         self.graphicsView.plot(x, y, pen=pen, symbol='o', symbolSize=5, symbolBrush=('b'))
 
     def clear_graph(self):

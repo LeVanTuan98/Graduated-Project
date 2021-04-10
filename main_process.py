@@ -1,5 +1,5 @@
 from process_functions import *
-
+import openpyxl
 
 class MainProcess(Process):
 
@@ -162,11 +162,21 @@ class MainProcess(Process):
         self.dis_array.append(self.distance_x)
         self.ind_array.append(ind_image)
 
-    def save_excel_file(self):
-        workbook = xlsxwriter.Workbook(self.get_save_address())
-        worksheet = workbook.add_worksheet('result')
-        col = 0
-        worksheet.write_row(0, col, ['Frame', 'Distance(cm)'])
+    def save_excel_file(self, direction):
+        if os.path.exists(self.get_save_address()):
+            workbook = xlsxwriter.Workbook(self.get_save_address())
+            worksheet = workbook.add_worksheet('result')
+            worksheet.write_row(0, 0, ['Frame', 'X(cm)', 'Y(cm)'])
+
+        wb = openpyxl.load_workbook(self.get_save_address())
+        ws = wb['result']
         for i in self.ind_array:
-            worksheet.write_row(i, col, [i, self.dis_array[i - 1]])
-        workbook.close()
+            ws.cell(i + 1, 1).value = i
+            if direction == 0:  # X
+                ws.cell(i + 1, 2).value = self.dis_array[i - 1]
+            elif direction == 1:  # Y
+                ws.cell(i + 1, 3).value = self.dis_array[i - 1]
+        wb.save(self.get_save_address())
+        wb.close()
+
+

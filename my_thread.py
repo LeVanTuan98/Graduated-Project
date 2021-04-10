@@ -20,7 +20,7 @@ class RunThread(QtCore.QThread):
             self.change_value_progress.emit(cnt)
             self.update_console_list.emit([i, main_process.distance_x])
             self.data_graph.emit(main_process.ind_array, main_process.dis_array)
-        main_process.save_excel_file()
+        main_process.save_excel_file(self.get_direction())
         self.total_image.emit(main_process.get_index())
         self.run_progess_finished.emit(True)
 
@@ -38,6 +38,12 @@ class RunThread(QtCore.QThread):
 
     def set_file_path(self, file_path):
         self.file_path = file_path
+
+    def set_direction(self, direction):
+        self.direction = direction
+
+    def get_direction(self):
+        return self.direction
 
 
 class CalibThread(QtCore.QThread):
