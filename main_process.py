@@ -20,14 +20,15 @@ class MainProcess(Process):
         path_video = ""
         is_path = False
         path = self.video_address.split('.')
-        if path[1] == "mp4":
-            path = path[0].split('/')
+        if path[-1] == "mp4":
+            path = path[-2].split('/')
             for i in range(len(path) - 1):
                 if path[i] == 'Inputs':
                     is_path = True
                     continue
                 if is_path:
                     path_video += path[i] + '/'
+            path_excel = path_video
             path_video += path[-1]
         # print("Path_video_in_project:", path_video)
 
@@ -45,7 +46,7 @@ class MainProcess(Process):
 
         frame_folder = 'Outputs/' + path_video + '/frameFolder'
         image_folder = 'Outputs/' + path_video + '/imageFolder'
-        excel_folder = 'Outputs/' + path_video + '/excelFolder'
+        excel_folder = 'Outputs/' + path_excel + 'excelFolder'
         return frame_folder, image_folder, excel_folder
 
     def check_folder(self):
@@ -163,10 +164,11 @@ class MainProcess(Process):
         self.ind_array.append(ind_image)
 
     def save_excel_file(self, direction):
-        if os.path.exists(self.get_save_address()):
+        if not os.path.exists(self.get_save_address()):
             workbook = xlsxwriter.Workbook(self.get_save_address())
             worksheet = workbook.add_worksheet('result')
             worksheet.write_row(0, 0, ['Frame', 'X(cm)', 'Y(cm)'])
+            workbook.close()
 
         wb = openpyxl.load_workbook(self.get_save_address())
         ws = wb['result']

@@ -452,9 +452,9 @@ class Ui_MainWindow(object):
         self.abs_path, _ = QFileDialog.getOpenFileName(None, "Open Video File", 'Inputs/', "(*.mp4)")
         print("Path got video:", self.abs_path)
         self.mode = 0
-        # self.enable_graph()
+        self.enable_graph()
         self.clear_frame_box()
-        self.disable_graph()
+        # self.disable_graph()
         self.set_infomation_box(["", "", "", "Male", "", "", "", ""])
         self.console_list.clear()
 
@@ -669,15 +669,15 @@ class Ui_MainWindow(object):
             frame4 = QtGui.QPixmap(self.get_image_address_in_folder(self.get_relative_path(), start_p + 3)[0])
         return frame1, frame2, frame3, frame4
 
-    def is_chart(self):
-        if self.chart_rbtn.isChecked():
-            self.console_list.addItem("Chart radio button is being checked")
-            self.graphicsView.setGeometry(QtCore.QRect(216, 20, 531, 381))
-            return True
-        else:
-            self.console_list.addItem("Chart radio button is NOT being checked")
-            self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
-            return False
+    # def is_chart(self):
+    #     if self.chart_rbtn.isChecked():
+    #         self.console_list.addItem("Chart radio button is being checked")
+    #         self.graphicsView.setGeometry(QtCore.QRect(216, 20, 531, 381))
+    #         return True
+    #     else:
+    #         self.console_list.addItem("Chart radio button is NOT being checked")
+    #         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
+    #         return False
 
     def enable_graph(self):
         # self.console_list.addItem("Graph is enabled")
@@ -687,7 +687,7 @@ class Ui_MainWindow(object):
         # self.console_list.addItem("Graph is disabled")
         self.graphicsView.setGeometry(QtCore.QRect(0, 0, 0, 0))
 
-    def draw_graph(self, x, y, direction):
+    def draw_graph(self, x, y, direction=0):
         # x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         # y = [30, 32, 34, 32, 33, 31, 29, 32, 35, 45]
         x = np.array(x)

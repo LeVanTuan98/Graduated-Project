@@ -2,7 +2,7 @@ import xlrd
 import numpy as np
 
 
-excel_file_path = "sample.xlsx"
+excel_file_path = "Resourses/sample.xlsx"
 wb = xlrd.open_workbook(excel_file_path)
 sheet = wb.sheet_by_index(0)
 x = []
