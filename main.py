@@ -454,7 +454,7 @@ class Ui_MainWindow(object):
         self.mode = 0
         self.enable_graph()
         self.clear_frame_box()
-        # self.disable_graph()
+        self.disable_graph()
         self.set_infomation_box(["", "", "", "Male", "", "", "", ""])
         self.console_list.clear()
 

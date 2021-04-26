@@ -3,7 +3,7 @@ from calib_function import *
 import os
 
 
-dir_path = 'Inputs/data'
+dir_path = 'Inputs/LAB/'
 dir_list = []
 for root, dirs, files in os.walk(dir_path):
 
@@ -55,25 +55,30 @@ for folder in dir_list:
                     frame_address = frame_folder + '/Frame' + str('{0:04}'.format(video_process.index)) + '.jpg'
                     # print(frame_address)
                     cv2.imwrite(frame_address, frame)
-        if time == 1:
-            calib_process = Calibrate(video_process.get_frame(50))
-            calib_process.run()
-            if file == 'X.mp4':
-                blue_HSV_X = calib_process.get_blue_HSV()
-                laser_HSV_X = calib_process.get_laser_HSV()
-                direction = 0
-            elif file == 'Y.mp4':
-                blue_HSV_Y = calib_process.get_blue_HSV()
-                laser_HSV_Y = calib_process.get_laser_HSV()
-                direction = 1
-
         if file == 'X.mp4':
-            video_process.set_blue_HSV(blue_HSV_X)
-            video_process.set_laser_HSV(laser_HSV_X)
-
+            direction = 0
         elif file == 'Y.mp4':
-            video_process.set_blue_HSV(blue_HSV_Y)
-            video_process.set_laser_HSV(laser_HSV_Y)
+            direction = 1
+
+        # if time == 1:
+        #     calib_process = Calibrate(video_process.get_frame(50))
+        #     calib_process.run()
+        #     if file == 'X.mp4':
+        #         blue_HSV_X = calib_process.get_blue_HSV()
+        #         laser_HSV_X = calib_process.get_laser_HSV()
+        #         direction = 0
+        #     elif file == 'Y.mp4':
+        #         blue_HSV_Y = calib_process.get_blue_HSV()
+        #         laser_HSV_Y = calib_process.get_laser_HSV()
+        #         direction = 1
+
+        # if file == 'X.mp4':
+        #     video_process.set_blue_HSV(blue_HSV_X)
+        #     video_process.set_laser_HSV(laser_HSV_X)
+        #
+        # elif file == 'Y.mp4':
+        #     video_process.set_blue_HSV(blue_HSV_Y)
+        #     video_process.set_laser_HSV(laser_HSV_Y)
 
         for i in range(1, video_process.get_index() + 1):
             video_process.process_image(i)

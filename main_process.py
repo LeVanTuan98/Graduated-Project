@@ -11,9 +11,9 @@ class MainProcess(Process):
         self.video_address = file_name
         self.final_width = 620
         self.final_height = 180
-        self.pre_line1 = 0
-        self.pre_line2 = 0
-        self.pre_ver_coor = 0
+        # self.pre_line1 = 0
+        # self.pre_line2 = 0
+        # self.pre_ver_coor = 0
         self.distance_x = 0
 
     def get_folder_address(self):
@@ -100,6 +100,7 @@ class MainProcess(Process):
         if white_frame.shape == original_image.shape:
             print("[ERROR] in STEP 2")
             return
+        white_frame = cv2.resize(white_frame, (self.final_width, self.final_height))
         # cv2.imshow("Detected white frame", white_frame)
         # cv2.imwrite("detect.jpg", white_frame)
 
@@ -109,24 +110,24 @@ class MainProcess(Process):
 
         line1, line2, ver_coor, translation = super().detect_grid_coodinate(white_frame)
 
-        if np.size(ver_coor) != 15:
-            threshold_grid = super().determine_threshold_for_grid(white_frame)
-            super().set_threshold(threshold_grid)
-
-            # STEP 4: Determine the coordinate of the Grid - Lap lai buoc 4
-            line1, line2, ver_coor, translation = super().detect_grid_coodinate(white_frame)
-
-            if np.size(ver_coor) != 15:
-                line1 = self.pre_line1
-                line2 = self.pre_line2
-                ver_coor = self.pre_ver_coor
-                if np.size(self.pre_ver_coor) != 15:
-                    print("[ERROR] in STEP 3")
-                    return
-
-        self.pre_line1 = line1
-        self.pre_line2 = line2
-        self.pre_ver_coor = ver_coor
+        # if np.size(ver_coor) != 15:
+        #     threshold_grid = super().determine_threshold_for_grid(white_frame)
+        #     super().set_threshold(threshold_grid)
+        #
+        #     # STEP 4: Determine the coordinate of the Grid - Lap lai buoc 4
+        #     line1, line2, ver_coor, translation = super().detect_grid_coodinate(white_frame)
+        #
+        #     if np.size(ver_coor) != 15:
+        #         line1 = self.pre_line1
+        #         line2 = self.pre_line2
+        #         ver_coor = self.pre_ver_coor
+        #         if np.size(self.pre_ver_coor) != 15:
+        #             print("[ERROR] in STEP 3")
+        #             return
+        #
+        # self.pre_line1 = line1
+        # self.pre_line2 = line2
+        # self.pre_ver_coor = ver_coor
 
         # STEP 4: Find center point
         cX, cY = super().find_center_point(white_frame)
@@ -136,6 +137,7 @@ class MainProcess(Process):
 
         # STEP 5: Calculate the real coordinate of the laser pointer
         self.distance_x = super().calculate_real_coordinate_of_laser_pointer(cX, cY, ver_coor)
+        print("Frame: {}".format(ind_image))
         print("Khoang cach: " + str(self.distance_x))
 
         _, image_folder, _ = self.get_folder_address()
@@ -172,12 +174,14 @@ class MainProcess(Process):
 
         wb = openpyxl.load_workbook(self.get_save_address())
         ws = wb['result']
+        j = 0
         for i in self.ind_array:
+            j += 1
             ws.cell(i + 1, 1).value = i
             if direction == 0:  # X
-                ws.cell(i + 1, 2).value = self.dis_array[i - 1]
+                ws.cell(i + 1, 2).value = self.dis_array[j - 1]
             elif direction == 1:  # Y
-                ws.cell(i + 1, 3).value = self.dis_array[i - 1]
+                ws.cell(i + 1, 3).value = self.dis_array[j - 1]
         wb.save(self.get_save_address())
         wb.close()
 

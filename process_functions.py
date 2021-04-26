@@ -13,13 +13,14 @@ class Process:
 
     def __init__(self):
         # HSV: Hue - Saturate - Value
-        self.blue_lower = (80, 89, 44)
-        self.blue_upper = (140, 229, 184)
+        self.blue_lower = (80, 89, 44) #(80, 89, 44)
+        self.blue_upper = (175, 230, 190) #(140, 229, 184)
 
         self.laser_lower = (140, 0, 245)
         self.laser_upper = (255, 255, 255)
 
         self.threshold = 0
+        self.error_list = []
 
     def set_threshold(self, threshold):
         self.threshold = threshold
@@ -131,7 +132,6 @@ class Process:
 
         # [DEBUG MODE]
         # cv2.imwrite("Warped blue image.jpg", maskBlue)
-        # print(np.shape(cntsBlue))
         # cv2.imshow("Warped blue image", cv2.resize(maskBlue, (500, 250)))
         # cv2.waitKey(0)
 
@@ -245,6 +245,7 @@ class Process:
             y = int(M["m01"] / M["m00"])
         except:
             print("[ERROR] Tach Frame da loi")
+            # self.error_list.append()
             return -1, -1
 
         # cv2.circle(warped_image, (x, y), 5, (0, 0, 255), 1, cv2.LINE_AA)
@@ -324,27 +325,19 @@ class Process:
                 # print(np.sum(histogram[0, :thresholds[i]]))
                 return thresholds[i]
 
-    def detect_grid_coodinate(self, warped_image):
-        image = warped_image.copy()
-        size_image = np.shape(image)
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # thresholding
-        th, threshed = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY_INV)
-        # [DEBUG MODE]
-        # cv2.imshow("thresh", threshed)
-        # # cv2.imwrite("thresh.jpg", threshed)
-        # cv2.waitKey(0)
+    def detect_dot_of_line(self, mask):
+        size_image = np.shape(mask)
 
         # findcontours
-        cnts = cv2.findContours(threshed, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
+        cnts = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
+
         # filter by area
         number_dot_per_line = 15
         S_min = 5
         S_max = 300
-        xcnts = []
-        coor_x = []
-        coor_y = []
+        x = []
+        y = []
+
         # Tim tam cua cac nut luoi dua vao dieu kien dien tich [S_min, S_max]
         for cnt in cnts:
             if S_min < cv2.contourArea(cnt) < S_max:
@@ -355,91 +348,84 @@ class Process:
                 grid_x = int(M["m10"] / M["m00"])
                 grid_y = int(M["m01"] / M["m00"])
 
-                # [DEBUG MODE]
-                # cv2.circle(image, (grid_x, grid_y), 2, (255, 0, 0), 2, cv2.LINE_AA)
-                # cv2.imshow("grid_image", image)
-                # cv2.waitKey(0)
-
-                SD = 15
+                SD = 10
                 if (SD < grid_x < size_image[1] - SD) and (SD < grid_y < size_image[0] - SD):
-                    xcnts.append(cnt)
-                    coor_x.append(grid_x)
-                    coor_y.append(grid_y)
-                    cv2.circle(image, (grid_x, grid_y), 2, (255, 0, 0), 2, cv2.LINE_AA)
-                    # cv2.imshow("grid_image", image)
-                    # cv2.waitKey(0)
+                    x.append(grid_x)
+                    y.append(grid_y)
+        x = np.array(x)
+        y = round(np.array(y).mean())
+        x.sort()
+        # print(len(x))
+        # print(x)
 
-        if len(xcnts) != number_dot_per_line * 2:
-            print('[ERROR] Co %d diem nut!!!' % (len(xcnts)))
+        while(len(x) != number_dot_per_line):
+            if len(x) < number_dot_per_line:
+                for i in range(number_dot_per_line - len(x)):
+                    diff_x = np.diff(x)
+                    diff2_x = np.diff(diff_x)
+                    abnormal_value = np.where(abs(diff2_x) > 5)[0]
+                    if abnormal_value.size != 0:
+                        # max_value = np.amax(diff_x)
+                        max_index = np.where(diff_x == np.amax(diff_x))[0][0]
+                        mean_value = round(np.delete(diff_x, max_index).mean())
+                        x = np.insert(x, max_index + 1, (x[max_index] + mean_value))
+                        x.sort()
+                        # print(diff_x)
+                        # print(x)
+                    else:
+                        mean_value = round(diff_x.mean())
+                        if (size_image[1] - x[-1]) > 50:
+                            x = np.insert(x, -1, (x[-1] + mean_value))
+                        elif x[0] > 50:
+                            x = np.insert(x, 0, mean_value)
+                        x.sort()
+            else:
+                diff_x = np.diff(x)
+                diff2_x = np.diff(diff_x)
+                abnormal_value = np.where(abs(diff2_x) > 5)[0]
+                x = np.delete(x, abnormal_value[0] + 2)
+                x.sort()
+
+        y = np.ones_like(x) * y
+        return x, y
+
+    def detect_grid_coodinate(self, warped_image):
+        image = warped_image.copy()
+        size_image = np.shape(image)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # thresholding
+        th, threshed_image = cv2.threshold(gray, self.threshold - 10, 255, cv2.THRESH_BINARY_INV)
+        upper_line_mask = np.zeros_like(threshed_image)
+        lower_line_mask = np.zeros_like(threshed_image)
+        # Upper line
+        [top, bottom, left, right] = [5, int(size_image[0] * 1/3), 20, int(size_image[1] - 20)]
+        upper_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
+        # Lower line
+        [top, bottom, left, right] = [int(size_image[0] * 3/5), int(size_image[0] - 10), 20, int(size_image[1] - 20)]
+        lower_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
 
         # [DEBUG MODE]
-        # cv2.imshow("grid_image", image)
+        # cv2.imshow("threshed_image", threshed_image)
+        # cv2.imshow("upper line mask", upper_line_mask)
+        # cv2.imshow("lower line mask", lower_line_mask)
         # cv2.waitKey(0)
 
-        # Sap xep cac nut luoi theo tung cap voi cung toa do x
+        x1, y1 = self.detect_dot_of_line(upper_line_mask)
+        x2, y2 = self.detect_dot_of_line(lower_line_mask)
+
+        line1 = []  # toa do cua cac diem hang tren
+        line2 = []  # toa do cac diem hang duoi
+        ver_coor = []  # toa do cac diem theo truc x
         delta = []  # xac dinh do lech giua x1 va x2
-        try:
-            line1 = []  # toa do cua cac diem hang tren
-            line2 = []  # toa do cac diem hang duoi
-            ver_coor = []  # toa do cac diem theo truc x
-            # Sap xep cac nut luoi theo tung cap voi cung toa do x
-            while len(coor_x) != 0:
+        for i in range(15):
+            line1.append([x1[i], y1[i]])
+            line2.append([x2[i], y2[i]])
+            mean_x = round((x1[i] + x2[i])/2)
+            ver_coor.append(mean_x)
+            delta.append(x1[i] - x2[i])
 
-                x1 = coor_x[0]
-                y1 = coor_y[0]
-
-                coor_x.pop(0)
-                coor_y.pop(0)
-                # Kiem tra xem co 2 diem nao co toa do x gan nhau ma khong phai la 1 cap
-                if np.size(ver_coor) > 0:
-                    x1_temp = abs(ver_coor - np.ones(np.size(ver_coor)) * x1)
-                    x1_min = min(x1_temp)
-                    if x1_min < 10:
-                        continue
-
-                if len(coor_x) == 0:
-                    x2 = x1
-                    y2 = np.shape(image)[0] - 25 if (y1 < 50) else 20
-                else:
-                    coor_temp = abs(coor_x - np.ones(np.size(coor_x)) * x1)
-                    min_temp = min(coor_temp)
-                    if min_temp > 20:
-                        x2 = x1
-                        y2 = np.shape(image)[0] - 25 if (y1 < 50) else 20
-                    else:
-                        for j in range(len(coor_temp)):
-                            if coor_temp[j] == min_temp:
-                                index_x2 = j
-                                break
-                        x2 = coor_x[index_x2]
-                        y2 = coor_y[index_x2]
-                xtb = int((x1 + x2) / 2)
-                if abs(y1 - y2) > 80:
-                    coor_x.pop(index_x2)
-                    coor_y.pop(index_x2)
-                    if y1 < y2:
-                        line1.append([x1, y1])
-                        line2.append([x2, y2])
-                    else:
-                        line2.append([x1, y1])
-                        line1.append([x2, y2])
-                    ver_coor.append(xtb)
-                    delta.append(x1 - x2)
-                    # print("-----------")
-                    # print(coor_x)
-                    # print(coor_y)
-                    # print(x1, y1)
-                    # print(x2, y2)
-                    # cv2.circle(image, (x1, y1), 2, (255, 0, 255), 2, cv2.LINE_AA)
-                    # cv2.circle(image, (x2, y2), 2, (255, 0, 255), 2, cv2.LINE_AA)
-                    # cv2.imshow("grid_image", image)
-                    # cv2.waitKey(0)
-            ver_coor.sort()
-            # print(round(np.average(delta)))
-            return line1, line2, ver_coor, int(round(np.average(delta)))
-        except:
-            print("[ERROR] Khong the xac dinh dung luoi")
-            return 0, 0, 0, 0
+        return line1, line2, ver_coor, round(np.mean(delta))
 
     def calculate_real_coordinate_of_laser_pointer(self, cX, cY, ver_coor):
         # Input: x, y: Toa do tam cua diem laser

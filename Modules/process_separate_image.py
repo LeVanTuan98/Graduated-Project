@@ -7,8 +7,8 @@ pre_line2 = 0
 pre_ver_coor = 0
 distance_x = 0
 
-image_name = '40.jpg'
-input_image_file = "../Inputs/experiment_images//raw_images/" + image_name
+image_name = 'Frame0907.jpg'
+input_image_file = "../Outputs/LAB/April24/Khanh/1/X/frameFolder/" + image_name
 
 process_image = Process()
 
@@ -21,8 +21,8 @@ white_frame = process_image.detect_white_frame(original_image)
 if white_frame.shape == original_image.shape:
     print("[ERROR] in STEP 2")
 
-white_frame = cv2.resize(white_frame, (np.shape(white_frame)[1]*2, np.shape(white_frame)[0]*2))
-# cv2.imshow("Detected white frame", white_frame)
+white_frame = cv2.resize(white_frame, (final_width, final_height))
+cv2.imshow("Detected white frame", white_frame)
 
 # cv2.imwrite("detect.jpg", white_frame)
 # STEP 3: Determine the coordinate of the Grid
@@ -31,23 +31,23 @@ process_image.set_threshold(threshold_grid)
 
 line1, line2, ver_coor, translation = process_image.detect_grid_coodinate(white_frame)
 
-if np.size(ver_coor) != 15:
-    threshold_grid = process_image.determine_threshold_for_grid(white_frame)
-    process_image.set_threshold(threshold_grid)
-
-    # STEP 4: Determine the coordinate of the Grid - Lap lai buoc 4
-    line1, line2, ver_coor, translation = process_image.detect_grid_coodinate(white_frame)
-
-    if np.size(ver_coor) != 15:
-        line1 = pre_line1
-        line2 = pre_line2
-        ver_coor = pre_ver_coor
-        if np.size(pre_ver_coor) != 15:
-            print("[ERROR] in STEP 3")
-
-pre_line1 = line1
-pre_line2 = line2
-pre_ver_coor = ver_coor
+# if np.size(ver_coor) != 15:
+#     threshold_grid = process_image.determine_threshold_for_grid(white_frame)
+#     process_image.set_threshold(threshold_grid)
+#
+#     # STEP 4: Determine the coordinate of the Grid - Lap lai buoc 4
+#     line1, line2, ver_coor, translation = process_image.detect_grid_coodinate(white_frame)
+#
+#     if np.size(ver_coor) != 15:
+#         line1 = pre_line1
+#         line2 = pre_line2
+#         ver_coor = pre_ver_coor
+#         if np.size(pre_ver_coor) != 15:
+#             print("[ERROR] in STEP 3")
+#
+# pre_line1 = line1
+# pre_line2 = line2
+# pre_ver_coor = ver_coor
 
 # STEP 4: Find center point
 cX, cY = process_image.find_center_point(white_frame)
