@@ -91,6 +91,7 @@ class MainProcess(Process):
         return cv2.imread(frame_address)
 
     def process_image(self, ind_image):
+        print("Frame: {}".format(ind_image))
         # STEP 1: Load image
         original_image = self.get_frame(ind_image)
         # cv2.imshow("Original image", cv2.resize(src=original_image, dsize=(500, 200)))
@@ -137,7 +138,6 @@ class MainProcess(Process):
 
         # STEP 5: Calculate the real coordinate of the laser pointer
         self.distance_x = super().calculate_real_coordinate_of_laser_pointer(cX, cY, ver_coor)
-        print("Frame: {}".format(ind_image))
         print("Khoang cach: " + str(self.distance_x))
 
         _, image_folder, _ = self.get_folder_address()

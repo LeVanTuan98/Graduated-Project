@@ -3,7 +3,7 @@ from calib_function import *
 import os
 
 
-dir_path = 'Inputs/LAB/'
+dir_path = 'Inputs/BVYHCT/April19/2'
 dir_list = []
 for root, dirs, files in os.walk(dir_path):
 
@@ -25,7 +25,7 @@ for root, dirs, files in os.walk(dir_path):
             # print(file_path)
 
 print(dir_list)
-video_list = ['X.mp4', 'Y.mp4']
+video_list = ['X.mp4']
 time = 0
 blue_HSV_X = (0, 0, 0)
 laser_HSV_X = (0, 0, 0)
