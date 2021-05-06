@@ -3,7 +3,7 @@ from calib_function import *
 import os
 
 
-dir_path = 'Inputs/'
+dir_path = 'Inputs/LAB/May6/Khanh/1.mp4'
 dir_list = []
 for root, dirs, files in os.walk(dir_path):
 
@@ -30,7 +30,9 @@ laser_HSV_X = (0, 0, 0)
 blue_HSV_Y = (0, 0, 0)
 laser_HSV_Y = (0, 0, 0)
 direction = -1
-for file_name in dir_list:
+# for file_name in dir_list:
+for q in range(1):
+    file_name = dir_path
     print(file_name)
     video_process = MainProcess(file_name)
     video_process.check_folder()

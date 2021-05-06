@@ -99,6 +99,7 @@ class MainProcess(Process):
         print("Frame: {}".format(ind_image))
         # STEP 1: Load image
         original_image = self.get_frame(ind_image)
+        original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
         # cv2.imshow("Original image", cv2.resize(src=original_image, dsize=(500, 200)))
 
         # STEP 2: Detect WHITE frame
@@ -157,7 +158,7 @@ class MainProcess(Process):
         if not os.path.exists(self.get_save_address()):
             workbook = xlsxwriter.Workbook(self.get_save_address())
             worksheet = workbook.add_worksheet('result')
-            worksheet.write_row(0, 0, ['Frame', 'X1(cm) - above', 'X2(cm) - below'])
+            worksheet.write_row(0, 0, ['Frame', 'X1', 'X2'])
             workbook.close()
 
         wb = openpyxl.load_workbook(self.get_save_address())

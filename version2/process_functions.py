@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import shutil
 import glob
 import xlsxwriter
+from collections import Counter
 
 
 
@@ -14,7 +15,7 @@ class Process:
     def __init__(self):
         # HSV: Hue - Saturate - Value
         self.blue_lower = (80, 89, 44) #(80, 89, 44)
-        self.blue_upper = (175, 230, 190) #(140, 229, 184)
+        self.blue_upper = (140, 229, 184) #(140, 229, 184)
 
         self.laser_lower = (140, 0, 245)
         self.laser_upper = (255, 255, 255)
@@ -167,7 +168,8 @@ class Process:
 
                     # cv2.imshow('The photo contains blue zone', cv2.resize(blueZone, (500, 250)))
                     # cv2.imshow('Blue Mask ', cv2.resize(maskBlue, (500, 200)))
-                    # cv2.imwrite("Blue Mask.jpg", blueZone)
+                    # cv2.imwrite("Blue Zone.jpg", blueZone)
+                    # cv2.imwrite("Blue Mask.jpg", maskBlue)
                     # cv2.waitKey(0)
 
                     # calculate moments of binary image
@@ -177,16 +179,28 @@ class Process:
                         # calculate x,y coordinate of center
                         cXTemp = int(M["m10"] / M["m00"])
                         cYTemp = int(M["m01"] / M["m00"])
-
                     except:
                         print("[LOG] Khong tim thay laser.")
                         continue
                     # Nếu thỏa mãn vùng màu xanh có chứa Laser thì tiếp tục để tìm vùng trắng bên trong
                     # loop over the contours
-                    for j in range(i + 1, np.size(cntsBlue)):
+                    # convert the image to grayscale, blur it, and find edges
+                    # in the image
+                    blueZone_hsv = cv2.cvtColor(blueZone, cv2.COLOR_BGR2HSV)
+
+                    blueZone_mask = cv2.inRange(blueZone_hsv, self.blue_lower, self.blue_upper)
+
+                    blueZone_mask = cv2.erode(blueZone_mask, None, iterations=2)
+                    blueZone_mask = cv2.dilate(blueZone_mask, None, iterations=2)
+
+                    blueZone_cnts = cv2.findContours(blueZone_mask.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+                    blueZone_cnts = imutils.grab_contours(blueZone_cnts)
+                    blueZone_cnts = sorted(blueZone_cnts, key=cv2.contourArea, reverse=True)[:4]
+
+                    for j in range(1, np.size(blueZone_cnts)):
                         # approximate the contour
-                        peri = cv2.arcLength(cntsBlue[j], True)
-                        approx_white = cv2.approxPolyDP(cntsBlue[j], 0.02 * peri, True)
+                        peri = cv2.arcLength(blueZone_cnts[j], True)
+                        approx_white = cv2.approxPolyDP(blueZone_cnts[j], 0.02 * peri, True)
 
                         maskWhite = np.zeros_like(original_image)
                         cv2.drawContours(maskWhite, [approx_white], 0, (255, 255, 255),
@@ -201,7 +215,7 @@ class Process:
                         # cv2.waitKey(0)
 
                         blueArea = cv2.contourArea(cntsBlue[i])
-                        whiteArea = cv2.contourArea(cntsBlue[j])
+                        whiteArea = cv2.contourArea(blueZone_cnts[j])
                         # print(blueArea)
                         # print(whiteArea)
                         # print(i, j)
@@ -213,13 +227,12 @@ class Process:
                             if minX < cXTemp < maxX and minY < cYTemp < maxY and (0.5 < (whiteArea / blueArea) < 1):
                                 screenCntWhite = approx_white
 
-                                # [DEBUG MODE]
-                                # cv2.imshow('Detected white zone', screenCntWhite)
-
                                 finalWhiteImage, _, _, _, _ = self.four_point_transform(original_image,
                                                                                         screenCntWhite.reshape(4, 2))
+                                # [DEBUG MODE]
                                 # cv2.imshow('Mask_wapred.jpg', finalWhiteImage)
                                 # cv2.imwrite('Mask_wapred.jpg', finalWhiteImage)
+                                # cv2.waitKey(0)
                                 set_of_frame.append([minY, finalWhiteImage])
                             else:
                                 continue
@@ -333,8 +346,8 @@ class Process:
 
         # filter by area
         number_dot_per_line = 15
-        S_min = 5
-        S_max = 300
+        S_min = 1
+        S_max = 100
         x = []
         y = []
 
@@ -348,7 +361,7 @@ class Process:
                 grid_x = int(M["m10"] / M["m00"])
                 grid_y = int(M["m01"] / M["m00"])
 
-                SD = 10
+                SD = 5
                 if (SD < grid_x < size_image[1] - SD) and (SD < grid_y < size_image[0] - SD):
                     x.append(grid_x)
                     y.append(grid_y)
@@ -357,23 +370,26 @@ class Process:
         x.sort()
         # print(len(x))
         # print(x)
-
-        while(len(x) != number_dot_per_line):
+        most_common, num_most_common = Counter(np.diff(x)).most_common(1)[0]
+        while len(x) != number_dot_per_line:
             if len(x) < number_dot_per_line:
                 for i in range(number_dot_per_line - len(x)):
                     diff_x = np.diff(x)
                     diff2_x = np.diff(diff_x)
-                    abnormal_value = np.where(abs(diff2_x) > 5)[0]
+                    abnormal_value = np.where(abs(diff2_x) > 6)[0]
                     if abnormal_value.size != 0:
                         # max_value = np.amax(diff_x)
                         max_index = np.where(diff_x == np.amax(diff_x))[0][0]
-                        mean_value = round(np.delete(diff_x, max_index).mean())
+                        # mean_value = round(np.delete(diff_x, max_index).mean())
+                        mean_value = most_common
                         x = np.insert(x, max_index + 1, (x[max_index] + mean_value))
                         x.sort()
+                        # print(diff2_x)
                         # print(diff_x)
                         # print(x)
                     else:
-                        mean_value = round(diff_x.mean())
+                        # mean_value = round(diff_x.mean())
+                        mean_value = most_common
                         if (size_image[1] - x[-1]) > 50:
                             x = np.insert(x, -1, (x[-1] + mean_value))
                         elif x[0] > 50:
@@ -386,6 +402,7 @@ class Process:
                 x = np.delete(x, abnormal_value[0] + 2)
                 x.sort()
 
+        # print(x)
         y = np.ones_like(x) * y
         return x, y
 
