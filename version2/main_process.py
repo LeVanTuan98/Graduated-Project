@@ -28,7 +28,7 @@ class MainProcess(Process):
                     continue
                 if is_path:
                     path_video += path[i] + '/'
-            path_excel = path_video
+            # path_excel = path_video
             path_video += path[-1]
         # print("Path_video_in_project:", path_video)
 
@@ -46,7 +46,7 @@ class MainProcess(Process):
 
         frame_folder = 'Outputs/' + path_video + '/frameFolder'
         image_folder = ['Outputs/' + path_video + '/imageFolder/aboveImage', 'Outputs/' + path_video + '/imageFolder/belowImage']
-        excel_folder = 'Outputs/' + path_excel + 'excelFolder'
+        excel_folder = 'Outputs/' + path_video + '/excelFolder'
         return frame_folder, image_folder, excel_folder
 
     def check_folder(self):

@@ -333,21 +333,19 @@ class Process:
         # plt.show()
         # print(np.sum(histogram[0, :thresholds[-1]]))
         for i in range(np.size(thresholds) - 1, 0, -1):
-            if np.sum(histogram[0, :thresholds[i]]) < 8000:
+            if np.sum(histogram[0, :thresholds[i]]) < 10000:
                 # print("-----------", "Threshold for grid: ", thresholds[i], "------------")
                 # print(np.sum(histogram[0, :thresholds[i]]))
                 return thresholds[i]
 
     def detect_dot_of_line(self, mask):
-        size_image = np.shape(mask)
-
+        self.size_image = np.shape(mask)
         # findcontours
         cnts = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)[-2]
 
         # filter by area
-        number_dot_per_line = 15
-        S_min = 1
-        S_max = 100
+        S_min = 3
+        S_max = 300
         x = []
         y = []
 
@@ -362,64 +360,97 @@ class Process:
                 grid_y = int(M["m01"] / M["m00"])
 
                 SD = 5
-                if (SD < grid_x < size_image[1] - SD) and (SD < grid_y < size_image[0] - SD):
+                if (SD < grid_x < self.size_image[1] - SD) and (SD < grid_y < self.size_image[0] - SD):
                     x.append(grid_x)
                     y.append(grid_y)
         x = np.array(x)
         y = round(np.array(y).mean())
         x.sort()
         # print(len(x))
-        # print(x)
-        most_common, num_most_common = Counter(np.diff(x)).most_common(1)[0]
+        return x, np.ones_like(x)*y
+
+    def standard_dot_per_line(self, x, y):
+        number_dot_per_line = 15
+        try:
+            most_common, num_most_common = Counter(np.diff(x)).most_common(1)[0]
+            mean_value = most_common
+        except:
+            mean_value = 40
         while len(x) != number_dot_per_line:
+            # print(len(x))
+            # print(x)
             if len(x) < number_dot_per_line:
                 for i in range(number_dot_per_line - len(x)):
                     diff_x = np.diff(x)
                     diff2_x = np.diff(diff_x)
-                    abnormal_value = np.where(abs(diff2_x) > 6)[0]
-                    if abnormal_value.size != 0:
+                    abnormal_value = np.where(abs(diff2_x) > 10)[0]
+
+                    # mean_value = round(diff_x.mean())
+                    if (self.size_image[1] - x[-1]) > mean_value:
+                        x = np.insert(x, -1, (x[-1] + mean_value))
+                    elif x[0] > 50:
+                        x = np.insert(x, 0, mean_value)
+                    elif abnormal_value.size != 0:
                         # max_value = np.amax(diff_x)
                         max_index = np.where(diff_x == np.amax(diff_x))[0][0]
                         # mean_value = round(np.delete(diff_x, max_index).mean())
-                        mean_value = most_common
                         x = np.insert(x, max_index + 1, (x[max_index] + mean_value))
-                        x.sort()
-                        # print(diff2_x)
                         # print(diff_x)
+                        # print(diff2_x)
                         # print(x)
-                    else:
-                        # mean_value = round(diff_x.mean())
-                        mean_value = most_common
-                        if (size_image[1] - x[-1]) > 50:
-                            x = np.insert(x, -1, (x[-1] + mean_value))
-                        elif x[0] > 50:
-                            x = np.insert(x, 0, mean_value)
-                        x.sort()
-            else:
+
+                    x.sort()
+            if len(x) > number_dot_per_line:
                 diff_x = np.diff(x)
                 diff2_x = np.diff(diff_x)
-                abnormal_value = np.where(abs(diff2_x) > 5)[0]
-                x = np.delete(x, abnormal_value[0] + 2)
+                abnormal_position = np.where(abs(diff2_x) > 10)[0]
+                x = np.delete(x, abnormal_position + 2)
+                # for ab in abnormal_position:
+                #     if diff2_x[ab] > 0:
+                #         x = np.delete(x, ab - 2)
+                #     else:
+                #         x = np.delete(x, ab + 2)
+                # print(diff_x)
+                # print(diff2_x)
+                # print(x)
                 x.sort()
 
-        # print(x)
-        y = np.ones_like(x) * y
+            if len(x) == number_dot_per_line:
+                diff_x = np.diff(x)
+                # diff2_x = np.diff(diff_x)
+                # print(diff_x)
+                # print(diff2_x)
+                # abnormal_position = np.where(abs(diff2_x) > 10)[0]
+                # x = np.delete(x, abnormal_position[0] + 2)
+                # for ab in abnormal_position:
+                #     if diff2_x[ab] > 0:
+                #         x = np.delete(x, ab - 2)
+                #     else:
+                #         x = np.delete(x, ab + 2)
+                for ix in range(len(diff_x)):
+                    if diff_x[ix] > mean_value + 5 or diff_x[ix] < mean_value - 5:
+                        x = np.delete(x, ix + 1)
+                        break
+                # print(x)
+                x.sort()
+
+        y = np.ones_like(x) * y[0]
         return x, y
 
-    def detect_grid_coodinate(self, warped_image):
+    def divide_2_mask(self, warped_image):
         image = warped_image.copy()
         size_image = np.shape(image)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # thresholding
-        th, threshed_image = cv2.threshold(gray, self.threshold - 10, 255, cv2.THRESH_BINARY_INV)
+        th, threshed_image = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY_INV)
         upper_line_mask = np.zeros_like(threshed_image)
         lower_line_mask = np.zeros_like(threshed_image)
         # Upper line
-        [top, bottom, left, right] = [5, int(size_image[0] * 1/3), 20, int(size_image[1] - 20)]
+        [top, bottom, left, right] = [5, int(size_image[0] * 1 / 3), 20, int(size_image[1] - 20)]
         upper_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
         # Lower line
-        [top, bottom, left, right] = [int(size_image[0] * 3/5), int(size_image[0] - 10), 20, int(size_image[1] - 20)]
+        [top, bottom, left, right] = [int(size_image[0] * 3 / 5), int(size_image[0] - 10), 20, int(size_image[1] - 20)]
         lower_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
 
         # [DEBUG MODE]
@@ -427,9 +458,32 @@ class Process:
         # cv2.imshow("upper line mask", upper_line_mask)
         # cv2.imshow("lower line mask", lower_line_mask)
         # cv2.waitKey(0)
+        return upper_line_mask, lower_line_mask
+
+    def detect_grid_coodinate(self, warped_image):
+        upper_line_mask, lower_line_mask = self.divide_2_mask(warped_image)
 
         x1, y1 = self.detect_dot_of_line(upper_line_mask)
         x2, y2 = self.detect_dot_of_line(lower_line_mask)
+
+
+        if len(x1) > 15 or len(x2) > 15:
+            self.threshold -= 30
+            if len(x1) > 15:
+                upper_line_mask, _ = self.divide_2_mask(warped_image)
+                x1, y1 = self.detect_dot_of_line(upper_line_mask)
+            if len(x2) > 15:
+                _, lower_line_mask = self.divide_2_mask(warped_image)
+                x2, y2 = self.detect_dot_of_line(lower_line_mask)
+
+
+        # for ix in range(len(x1)):
+        #     cv2.circle(warped_image, (x1[ix], y1[ix]), 2, (255, 0, 0), 2, cv2.LINE_AA)
+        # cv2.imshow("Dots Check", warped_image)
+        # cv2.waitKey(0)
+
+        x1, y1 = self.standard_dot_per_line(x1, y1)
+        x2, y2 = self.standard_dot_per_line(x2, y2)
 
         line1 = []  # toa do cua cac diem hang tren
         line2 = []  # toa do cac diem hang duoi

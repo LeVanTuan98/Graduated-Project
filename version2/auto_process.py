@@ -2,8 +2,8 @@ from main_process import *
 from calib_function import *
 import os
 
-
-dir_path = 'Inputs/LAB/May6/Khanh/1.mp4'
+# luu y: dir_path chi dan den folder gan cuoi, khong phai folder chua video
+dir_path = 'Inputs/LAB/May8/'
 dir_list = []
 for root, dirs, files in os.walk(dir_path):
 
@@ -19,20 +19,20 @@ for root, dirs, files in os.walk(dir_path):
         sub_folder = os.path.basename(tag)
 
         # print("File:", file, "belongs in", tag_parent, sub_folder if sub_folder else "")
-        file_path = "{}/{}/{}".format(dir_path, tag_parent if tag_parent else "", sub_folder if sub_folder else "")
+        file_path = "{}/{}".format(dir_path, sub_folder if sub_folder else "")
         for file_name in glob.glob(file_path + '/*.mp4'):
             dir_list.append(file_name)
-            # print(file_path)
+            print(file_path)
 
-print(dir_list)
+# print(dir_list)
 blue_HSV_X = (0, 0, 0)
 laser_HSV_X = (0, 0, 0)
 blue_HSV_Y = (0, 0, 0)
 laser_HSV_Y = (0, 0, 0)
 direction = -1
 # for file_name in dir_list:
-for q in range(1):
-    file_name = dir_path
+for k in range(9, 10):
+    file_name = dir_path + "Khanh/{}.mp4".format(k)
     print(file_name)
     video_process = MainProcess(file_name)
     video_process.check_folder()
