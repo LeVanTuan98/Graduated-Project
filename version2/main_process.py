@@ -11,10 +11,8 @@ class MainProcess(Process):
         self.video_address = file_name
         self.final_width = 620
         self.final_height = 180
-        # self.pre_line1 = 0
-        # self.pre_line2 = 0
-        # self.pre_ver_coor = 0
         self.distance_x = 0
+
 
     def get_folder_address(self):
         path_video = ""
@@ -95,8 +93,21 @@ class MainProcess(Process):
     def sort_option(self, option):
         return option[0] #Sort bases on position of frame
 
+    def print_progress_bar(self, iterations, suffix=''):
+        print("Frame: {}".format(iterations), end =" ")
+        total = self.get_index()
+        percent = ("{0:." + str(1) + "f}").format(100 * ((iterations + 1) / float(total)))
+        filled_length = int(100 * iterations // total)
+        bar = '#' * filled_length + '-' * (100 - filled_length)
+        print('Process: |{}| {}%'.format(bar, percent), end =" ")
+        # print('\r Process: |%s| %s%% \r\n' % (bar, percent))
+        # Print new line on complete
+        if iterations == total:
+            print()
+
     def process_image(self, ind_image):
-        print("Frame: {}".format(ind_image))
+        self.print_progress_bar(ind_image)
+
         # STEP 1: Load image
         original_image = self.get_frame(ind_image)
         original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
@@ -105,7 +116,8 @@ class MainProcess(Process):
         # STEP 2: Detect WHITE frame
         set_of_white_frame = super().detect_white_frame(original_image)
         if np.shape(set_of_white_frame)[0] != 2:
-            print("[ERROR] in STEP 2")
+            # print("[ERROR] in STEP 2")
+            self.error_list["step2"] = True
             return
         set_of_white_frame.sort(key=self.sort_option)
         i = 0
@@ -123,12 +135,13 @@ class MainProcess(Process):
             # STEP 4: Find center point
             cX, cY = super().find_center_point(white_frame)
             if cX == -1:
-                print("[ERROR] in STEP 4")
+                # print("[ERROR] in STEP 4")
+                self.error_list["step4"] = True
                 return
 
             # STEP 5: Calculate the real coordinate of the laser pointer
             self.distance_x = super().calculate_real_coordinate_of_laser_pointer(cX, cY, ver_coor)
-            print("Khoang cach: " + str(self.distance_x))
+            print("Distance of {} frame: {}".format("above" if i == 0 else "below", self.distance_x))
 
             # STEP 6: Draw and Save image
             final_image = super().shift_image(white_frame, translation)
@@ -148,7 +161,7 @@ class MainProcess(Process):
             _, image_folder, _ = self.get_folder_address()
             image_address = image_folder[i] + '/Image' + str(
                 '{0:04}-{distance}'.format(ind_image, distance=self.distance_x)) + '.jpg'
-            print(image_address)
+            # print(image_address)
             i += 1
             cv2.imwrite(image_address, final_image)
             self.dis_array.append(self.distance_x)

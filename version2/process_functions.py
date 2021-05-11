@@ -21,7 +21,23 @@ class Process:
         self.laser_upper = (255, 255, 255)
 
         self.threshold = 0
-        self.error_list = []
+        self.error_list = {
+            "step2": False,
+            "step3": False,
+            "step4": False
+        }
+        self.DEBUG = {
+            "step2": {
+                "mask": False,
+                "position": False
+            }, # Detected white frame error
+            "step3": {
+                "threshold": False,
+                "mask": False,
+                "dot": False
+            }, # Detected grid coordinate error
+            "step4": False # Central laser point error
+        }
 
     def set_threshold(self, threshold):
         self.threshold = threshold
@@ -131,10 +147,11 @@ class Process:
         cntsBlue = imutils.grab_contours(cntsBlue)
         cntsBlue = sorted(cntsBlue, key=cv2.contourArea, reverse=True)[:4]
 
-        # [DEBUG MODE]
-        # cv2.imwrite("Warped blue image.jpg", maskBlue)
-        # cv2.imshow("Warped blue image", cv2.resize(maskBlue, (500, 250)))
-        # cv2.waitKey(0)
+        # [DEBUG MODE] Test Detect White Frame Error
+        if self.DEBUG["step2"]["mask"]:
+            # cv2.imwrite("Warped blue image.jpg", maskBlue)
+            cv2.imshow("Warped blue image", cv2.resize(maskBlue, (500, 250)))
+            cv2.waitKey(0)
 
         # screenCntWhite = np.zeros_like(original_image)  # Khởi tạo vùng màu đen không có gì
         try:
@@ -161,16 +178,17 @@ class Process:
                     laserZone[maskLaser == 255] = original_image[maskLaser == 255]
 
                     # # [DEBUG MODE]
-                    # cv2.imshow('The photo contains only laser dot', cv2.resize(laserZone, (500, 200)))
-                    # cv2.imshow('Laser Mask ', cv2.resize(maskLaser, (500, 200)))
-                    # cv2.imwrite("laser zone.jpg", laserZone)
-                    # cv2.imwrite("laser mask.jpg", maskLaser)
+                    if self.DEBUG["step2"]["mask"]:
+                        # cv2.imshow('The photo contains only laser dot', cv2.resize(laserZone, (500, 200)))
+                        cv2.imshow('Laser Mask ', cv2.resize(maskLaser, (500, 200)))
+                        # cv2.imwrite("laser zone.jpg", laserZone)
+                        # cv2.imwrite("laser mask.jpg", maskLaser)
 
-                    # cv2.imshow('The photo contains blue zone', cv2.resize(blueZone, (500, 250)))
-                    # cv2.imshow('Blue Mask ', cv2.resize(maskBlue, (500, 200)))
-                    # cv2.imwrite("Blue Zone.jpg", blueZone)
-                    # cv2.imwrite("Blue Mask.jpg", maskBlue)
-                    # cv2.waitKey(0)
+                        # cv2.imshow('The photo contains blue zone', cv2.resize(blueZone, (500, 250)))
+                        cv2.imshow('Blue Mask ', cv2.resize(maskBlue, (500, 200)))
+                        # cv2.imwrite("Blue Zone.jpg", blueZone)
+                        # cv2.imwrite("Blue Mask.jpg", maskBlue)
+                        cv2.waitKey(0)
 
                     # calculate moments of binary image
                     M = cv2.moments(maskLaser)
@@ -200,7 +218,7 @@ class Process:
                     for j in range(1, np.size(blueZone_cnts)):
                         # approximate the contour
                         peri = cv2.arcLength(blueZone_cnts[j], True)
-                        approx_white = cv2.approxPolyDP(blueZone_cnts[j], 0.02 * peri, True)
+                        approx_white = cv2.approxPolyDP(blueZone_cnts[j], 0.03 * peri, True)
 
                         maskWhite = np.zeros_like(original_image)
                         cv2.drawContours(maskWhite, [approx_white], 0, (255, 255, 255),
@@ -210,29 +228,39 @@ class Process:
                         whiteZone[maskWhite == 255] = original_image[maskWhite == 255]
 
                         # # [DEBUG MODE]
-                        # cv2.imshow('The photo contains white zone', cv2.resize(whiteZone, (500, 250)))
-                        # cv2.imshow('White Mask ', cv2.resize(maskBlue, (500, 200)))
-                        # cv2.waitKey(0)
+                        if self.DEBUG["step2"]["mask"]:
+                            # cv2.imshow('The photo contains white zone', cv2.resize(whiteZone, (500, 250)))
+                            cv2.imshow('White Mask ', cv2.resize(maskBlue, (500, 200)))
+                            cv2.waitKey(0)
 
                         blueArea = cv2.contourArea(cntsBlue[i])
                         whiteArea = cv2.contourArea(blueZone_cnts[j])
-                        # print(blueArea)
-                        # print(whiteArea)
-                        # print(i, j)
+                        # # [DEBUG MODE]
+                        if self.DEBUG["step2"]["position"]:
+                            print("Blue's Area: ", blueArea)
+                            print("White's Area: ", whiteArea)
+                            print("Number of vertices", len(approx_white))
 
                         # if our approximated contour has four points, then we
                         # can assume that we have found our screen
                         if len(approx_white) == 4:
                             _, minX, maxX, minY, maxY = self.four_point_transform(whiteZone, approx_white.reshape(4, 2))
+
+                            # # [DEBUG MODE]
+                            if self.DEBUG["step2"]["position"]:
+                                print("Min X: {}, X: {}, MaxX: {}".format(minX, cXTemp, maxX))
+                                print("Min Y: {}, Y: {}, MaxY: {}".format(minY , cYTemp, maxY))
+
                             if minX < cXTemp < maxX and minY < cYTemp < maxY and (0.5 < (whiteArea / blueArea) < 1):
                                 screenCntWhite = approx_white
 
                                 finalWhiteImage, _, _, _, _ = self.four_point_transform(original_image,
                                                                                         screenCntWhite.reshape(4, 2))
                                 # [DEBUG MODE]
-                                # cv2.imshow('Mask_wapred.jpg', finalWhiteImage)
-                                # cv2.imwrite('Mask_wapred.jpg', finalWhiteImage)
-                                # cv2.waitKey(0)
+                                if self.DEBUG["step2"]["mask"]:
+                                    cv2.imshow('Mask_wapred', finalWhiteImage)
+                                    # cv2.imwrite('Mask_wapred.jpg', finalWhiteImage)
+                                    cv2.waitKey(0)
                                 set_of_frame.append([minY, finalWhiteImage])
                             else:
                                 continue
@@ -261,15 +289,19 @@ class Process:
             # self.error_list.append()
             return -1, -1
 
-        # cv2.circle(warped_image, (x, y), 5, (0, 0, 255), 1, cv2.LINE_AA)
-        # cv2.imshow("laser position", warped_image)
+        if self.DEBUG["step4"]:
+            cv2.circle(warped_image, (x, y), 5, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.imshow("laser position", warped_image)
+
 
         # Improve the algorithm finding the centre laser
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # color -> gray
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
         thresh = cv2.threshold(blurred, 240, 255, cv2.THRESH_BINARY_INV)[1]
         canny = cv2.Canny(thresh, 50, 255, 1)
-        # cv2.imshow('canny', canny)
+        if self.DEBUG["step4"]:
+            cv2.imshow('canny', canny)
+            cv2.waitKey(0)
 
         delta = 30
         if (x < delta) | (y < delta):
@@ -326,16 +358,17 @@ class Process:
             if np.sign(diff_hist[0, i]) != np.sign(diff_hist[0, i + 1]):
                 if histogram[0, i + 1] > 1500:
                     break
-                # print(i + 1, ": ", histogram[0, i + 1])
-                # plt.plot(i + 1, histogram[0, i + 1], color='green', linestyle='dashed', linewidth=1,
-                #          marker='o', markerfacecolor='red', markersize=5)
+                plt.plot(i + 1, histogram[0, i + 1], color='green', linestyle='dashed', linewidth=1,
+                         marker='o', markerfacecolor='red', markersize=5)
                 thresholds.append(i + 1)
-        # plt.show()
-        # print(np.sum(histogram[0, :thresholds[-1]]))
+        if self.DEBUG["step3"]["threshold"]:
+            plt.show()
+
         for i in range(np.size(thresholds) - 1, 0, -1):
             if np.sum(histogram[0, :thresholds[i]]) < 10000:
-                # print("-----------", "Threshold for grid: ", thresholds[i], "------------")
-                # print(np.sum(histogram[0, :thresholds[i]]))
+                if self.DEBUG["step3"]["threshold"]:
+                    print("-----------Threshold for grid: {}------------".format(thresholds[i]))
+                    # print(np.sum(histogram[0, :thresholds[i]]))
                 return thresholds[i]
 
     def detect_dot_of_line(self, mask):
@@ -363,10 +396,9 @@ class Process:
                 if (SD < grid_x < self.size_image[1] - SD) and (SD < grid_y < self.size_image[0] - SD):
                     x.append(grid_x)
                     y.append(grid_y)
-        x = np.array(x)
-        y = round(np.array(y).mean())
+        x = np.array(x, dtype=object)
+        y = round(np.array(y, dtype=object).mean())
         x.sort()
-        # print(len(x))
         return x, np.ones_like(x)*y
 
     def standard_dot_per_line(self, x, y):
@@ -376,9 +408,13 @@ class Process:
             mean_value = most_common
         except:
             mean_value = 40
+        if self.DEBUG["step3"]["dot"]:
+            print(len(x))
+            print(x)
         while len(x) != number_dot_per_line:
-            # print(len(x))
-            # print(x)
+            if self.DEBUG["step3"]["dot"]:
+                print(len(x))
+                print(x)
             if len(x) < number_dot_per_line:
                 for i in range(number_dot_per_line - len(x)):
                     diff_x = np.diff(x)
@@ -395,9 +431,11 @@ class Process:
                         max_index = np.where(diff_x == np.amax(diff_x))[0][0]
                         # mean_value = round(np.delete(diff_x, max_index).mean())
                         x = np.insert(x, max_index + 1, (x[max_index] + mean_value))
-                        # print(diff_x)
-                        # print(diff2_x)
-                        # print(x)
+
+                        if self.DEBUG["step3"]["dot"]:
+                            print(diff_x)
+                            print(diff2_x)
+                            print(x)
 
                     x.sort()
             if len(x) > number_dot_per_line:
@@ -410,16 +448,15 @@ class Process:
                 #         x = np.delete(x, ab - 2)
                 #     else:
                 #         x = np.delete(x, ab + 2)
-                # print(diff_x)
-                # print(diff2_x)
-                # print(x)
+                if self.DEBUG["step3"]["dot"]:
+                    print(diff_x)
+                    print(diff2_x)
+                    print(x)
                 x.sort()
 
             if len(x) == number_dot_per_line:
                 diff_x = np.diff(x)
                 # diff2_x = np.diff(diff_x)
-                # print(diff_x)
-                # print(diff2_x)
                 # abnormal_position = np.where(abs(diff2_x) > 10)[0]
                 # x = np.delete(x, abnormal_position[0] + 2)
                 # for ab in abnormal_position:
@@ -431,7 +468,10 @@ class Process:
                     if diff_x[ix] > mean_value + 5 or diff_x[ix] < mean_value - 5:
                         x = np.delete(x, ix + 1)
                         break
-                # print(x)
+                if self.DEBUG["step3"]["dot"]:
+                    print(diff_x)
+                    # print(diff2_x)
+                    print(x)
                 x.sort()
 
         y = np.ones_like(x) * y[0]
@@ -447,17 +487,18 @@ class Process:
         upper_line_mask = np.zeros_like(threshed_image)
         lower_line_mask = np.zeros_like(threshed_image)
         # Upper line
-        [top, bottom, left, right] = [5, int(size_image[0] * 1 / 3), 20, int(size_image[1] - 20)]
+        [top, bottom, left, right] = [0, int(size_image[0] * 2 / 5), 20, int(size_image[1] - 20)]
         upper_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
         # Lower line
         [top, bottom, left, right] = [int(size_image[0] * 3 / 5), int(size_image[0] - 10), 20, int(size_image[1] - 20)]
         lower_line_mask[top:bottom][left:right] = threshed_image[top:bottom][left:right]
 
         # [DEBUG MODE]
-        # cv2.imshow("threshed_image", threshed_image)
-        # cv2.imshow("upper line mask", upper_line_mask)
-        # cv2.imshow("lower line mask", lower_line_mask)
-        # cv2.waitKey(0)
+        if self.DEBUG["step3"]["mask"]:
+            cv2.imshow("threshed mask", threshed_image)
+            cv2.imshow("upper line mask", upper_line_mask)
+            cv2.imshow("lower line mask", lower_line_mask)
+            cv2.waitKey(0)
         return upper_line_mask, lower_line_mask
 
     def detect_grid_coodinate(self, warped_image):
@@ -467,20 +508,30 @@ class Process:
         x2, y2 = self.detect_dot_of_line(lower_line_mask)
 
 
-        if len(x1) > 15 or len(x2) > 15:
-            self.threshold -= 30
-            if len(x1) > 15:
+        if len(x1) > 17 or len(x2) > 17:
+            self.threshold -= 20
+            if len(x1) > 17:
                 upper_line_mask, _ = self.divide_2_mask(warped_image)
                 x1, y1 = self.detect_dot_of_line(upper_line_mask)
-            if len(x2) > 15:
+            if len(x2) > 17:
                 _, lower_line_mask = self.divide_2_mask(warped_image)
                 x2, y2 = self.detect_dot_of_line(lower_line_mask)
 
+        if len(x1) < 10 or len(x2) < 10:
+            self.threshold += 10
+            if len(x1) < 10:
+                upper_line_mask, _ = self.divide_2_mask(warped_image)
+                x1, y1 = self.detect_dot_of_line(upper_line_mask)
+            if len(x2) < 10:
+                _, lower_line_mask = self.divide_2_mask(warped_image)
+                x2, y2 = self.detect_dot_of_line(lower_line_mask)
 
-        # for ix in range(len(x1)):
-        #     cv2.circle(warped_image, (x1[ix], y1[ix]), 2, (255, 0, 0), 2, cv2.LINE_AA)
-        # cv2.imshow("Dots Check", warped_image)
-        # cv2.waitKey(0)
+        if self.DEBUG["step3"]["dot"]:
+            check = warped_image.copy()
+            for ix in range(len(x1)):
+                cv2.circle(check, (x1[ix], y1[ix]), 2, (255, 0, 0), 2, cv2.LINE_AA)
+            cv2.imshow("Dots Check", check)
+            cv2.waitKey(0)
 
         x1, y1 = self.standard_dot_per_line(x1, y1)
         x2, y2 = self.standard_dot_per_line(x2, y2)

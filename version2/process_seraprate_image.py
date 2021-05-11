@@ -10,8 +10,8 @@ pre_ver_coor = 0
 distance_x = 0
 def sort_func(e):
     return e[0]
-image_name = 'Frame0614.jpg'
-input_image_file = "Outputs/LAB/May8/Khanh/9/frameFolder/" + image_name
+image_name = 'Frame0855.jpg'
+input_image_file = "Outputs/LAB/May11/Anh/2/frameFolder/" + image_name
 
 cap = cv2.VideoCapture(input_image_file)
 i = 0.0
