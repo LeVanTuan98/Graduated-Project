@@ -3,7 +3,7 @@ from calib_function import *
 import os
 
 # luu y: dir_path chi dan den folder gan cuoi, khong phai folder chua video
-dir_path = 'Inputs/LAB/May11/'
+dir_path = 'Inputs/LAB/May13/'
 dir_list = []
 for root, dirs, files in os.walk(dir_path):
 
@@ -30,16 +30,16 @@ laser_HSV_X = (0, 0, 0)
 blue_HSV_Y = (0, 0, 0)
 laser_HSV_Y = (0, 0, 0)
 direction = -1
-# for file_name in dir_list:
-for k in range(2, 4):
-    file_name = dir_path + "Anh/{}.mp4".format(k)
+for file_name in dir_list:
+# for k in range(2, 4):
+    # file_name = dir_path + "Anh/{}.mp4".format(k)
     print(file_name)
     video_process = MainProcess(file_name)
     video_process.check_folder()
     # print(video_process.get_folder_address())
 
     if video_process.get_index() == 0:
-        frame_folder, image_folder, excel_folder = video_process.get_folder_address()
+        frame_folder, image_folder, excel_folder, _ = video_process.get_folder_address()
         cap = cv2.VideoCapture(video_process.video_address)
         while True:
             # Read a new frame
@@ -54,7 +54,7 @@ for k in range(2, 4):
                 cv2.imwrite(frame_address, frame)
 
 
-    for i in range(855, video_process.get_index() + 1):
+    for i in range(1, video_process.get_index() + 1):
         video_process.process_image(i)
     video_process.save_excel_file()
 

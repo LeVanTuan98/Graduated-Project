@@ -8,10 +8,11 @@ pre_line1 = 0
 pre_line2 = 0
 pre_ver_coor = 0
 distance_x = 0
+number_of_frame = 4
 def sort_func(e):
     return e[0]
-image_name = 'Frame0855.jpg'
-input_image_file = "Outputs/LAB/May11/Anh/2/frameFolder/" + image_name
+image_name = 'Frame0001.jpg'
+input_image_file = "Outputs/LAB/May13/Khanh/1/frameFolder/" + image_name
 
 cap = cv2.VideoCapture(input_image_file)
 i = 0.0
@@ -29,7 +30,7 @@ original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
 # STEP 2: Detect WHITE frame
 set_of_white_frame = process_image.detect_white_frame(original_image)
 print(np.shape(set_of_white_frame))
-if np.shape(set_of_white_frame)[0] < 2:
+if np.shape(set_of_white_frame)[0] < number_of_frame:
     print("[ERROR] in STEP 2")
 temp = np.array(i)
 set_of_white_frame.sort(key=sort_func)

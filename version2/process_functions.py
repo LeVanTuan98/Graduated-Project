@@ -265,7 +265,7 @@ class Process:
                             else:
                                 continue
         except:
-            print("[WARNING] Khong co vung trang thoa man")
+            print("[WARNING] No have any concerned  white frame")
         return set_of_frame
 
     def find_center_point(self, warped_image):
@@ -285,7 +285,7 @@ class Process:
             x = int(M["m10"] / M["m00"])
             y = int(M["m01"] / M["m00"])
         except:
-            print("[ERROR] Tach Frame da loi")
+            print("[ERROR] Extracted frame error")
             # self.error_list.append()
             return -1, -1
 
@@ -564,10 +564,10 @@ class Process:
         # Tinh khoang cach tu tam den duong dau tien ben trai
         # Neu tam nam giua 2 cot => tinh ty le khoang cach tu tam den cot ben trai gan nhat + so cot o giua
         if (cX < min(ver_coor)):
-            print("[WARNING] Vuot ra khoi luoi")
+            print("[WARNING] Out of frame")
             x_real = 0
         if (cX > max(ver_coor)):
-            print("[WARNING] Vuot ra khoi luoi")
+            print("[WARNING] Out of frame")
             x_real = 14
         else:
             delta = ver_coor - np.ones(np.size(ver_coor)) * cX
