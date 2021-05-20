@@ -395,7 +395,7 @@ class Process:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # thresholding
-        th, threshed_image = cv2.threshold(gray, self.threshold - 10, 255, cv2.THRESH_BINARY_INV)
+        th, threshed_image = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY_INV)
         upper_line_mask = np.zeros_like(threshed_image)
         lower_line_mask = np.zeros_like(threshed_image)
         # Upper line

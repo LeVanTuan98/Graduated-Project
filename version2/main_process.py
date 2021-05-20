@@ -13,7 +13,11 @@ class MainProcess(Process):
         self.final_height = 180
         self.distance_x = 0
         self.number_of_frame = 4
+        self.rotate_image = False
 
+
+    def set_number_of_frame(self, number_of_frame):
+        self.number_of_frame = number_of_frame
 
     def get_folder_address(self):
         path_video = ""
@@ -113,7 +117,8 @@ class MainProcess(Process):
 
         # STEP 1: Load image
         original_image = self.get_frame(ind_image)
-        original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
+        if self.rotate_image:
+            original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
         # cv2.imshow("Original image", cv2.resize(src=original_image, dsize=(500, 200)))
 
         # STEP 2: Detect WHITE frame
@@ -188,7 +193,7 @@ class MainProcess(Process):
         for i in range(np.shape(self.ind_array)[0]):
             ws.cell(self.ind_array[i] + 1, 1).value = self.ind_array[i] #Frame
             for j in range(n):
-                ws.cell(self.ind_array[i] + 1 + 1, j + 2).value = self.dis_array[i][j]
+                ws.cell(self.ind_array[i] + 1, j + 2).value = self.dis_array[i][j]
         wb.save(self.get_save_address())
         wb.close()
 

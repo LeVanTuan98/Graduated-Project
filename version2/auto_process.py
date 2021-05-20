@@ -30,9 +30,9 @@ laser_HSV_X = (0, 0, 0)
 blue_HSV_Y = (0, 0, 0)
 laser_HSV_Y = (0, 0, 0)
 direction = -1
-for file_name in dir_list:
-# for k in range(2, 4):
-    # file_name = dir_path + "Anh/{}.mp4".format(k)
+# for file_name in dir_list:
+for k in range(4, 6):
+    file_name = dir_path + "Khanh/{}.mp4".format(k)
     print(file_name)
     video_process = MainProcess(file_name)
     video_process.check_folder()
@@ -52,7 +52,6 @@ for file_name in dir_list:
                 frame_address = frame_folder + '/Frame' + str('{0:04}'.format(video_process.index)) + '.jpg'
                 # print(frame_address)
                 cv2.imwrite(frame_address, frame)
-
 
     for i in range(1, video_process.get_index() + 1):
         video_process.process_image(i)

@@ -8,13 +8,15 @@ pre_line1 = 0
 pre_line2 = 0
 pre_ver_coor = 0
 distance_x = 0
-number_of_frame = 4
+number_of_frame = 1
+rotate_image = False
 def sort_func(e):
     return e[0]
-image_name = 'Frame0001.jpg'
-input_image_file = "Outputs/LAB/May13/Khanh/1/frameFolder/" + image_name
 
-cap = cv2.VideoCapture(input_image_file)
+image_name = '60_2.jpg'
+input_image_file = "Inputs/LAB/May18/TEST/" + image_name
+
+# cap = cv2.VideoCapture(input_image_file)
 i = 0.0
 dis_array = []
 
@@ -23,7 +25,8 @@ process_image = Process()
 
 # STEP 1: Load image
 original_image = cv2.imread(input_image_file)
-original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
+if rotate_image:
+    original_image = cv2.rotate(original_image, cv2.ROTATE_90_CLOCKWISE)
 # cv2.imshow("Original image", cv2.resize(src=original_image, dsize=(500, 200)))
 
 
@@ -57,7 +60,7 @@ for position, white_frame in set_of_white_frame:
     distance_x = process_image.calculate_real_coordinate_of_laser_pointer(cX, cY, ver_coor)
     print("Khoang cach: " + str(distance_x))
     temp = np.insert(temp, 0, distance_x)
-    output_image_file = "Outputs/TEST/image/image" + str('{0:04}'.format(int(i))) + '.jpg'
+    output_image_file = "Outputs/LAB/May18/TEST/image/" + image_name
 
     # STEP 6: Draw and Save image
     final_image = process_image.shift_image(white_frame, translation)
@@ -75,7 +78,7 @@ for position, white_frame in set_of_white_frame:
                              dsize=(final_width, final_height))
     cv2.imshow("Processed image", final_image)
     cv2.waitKey(0)
-    # cv2.imwrite(output_image_file, final_image)
+    cv2.imwrite(output_image_file, final_image)
 
 
 print(temp)

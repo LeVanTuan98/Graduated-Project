@@ -526,15 +526,17 @@ class Process:
                 _, lower_line_mask = self.divide_2_mask(warped_image)
                 x2, y2 = self.detect_dot_of_line(lower_line_mask)
 
+
+        x1, y1 = self.standard_dot_per_line(x1, y1)
+        x2, y2 = self.standard_dot_per_line(x2, y2)
+
         if self.DEBUG["step3"]["dot"]:
             check = warped_image.copy()
             for ix in range(len(x1)):
                 cv2.circle(check, (x1[ix], y1[ix]), 2, (255, 0, 0), 2, cv2.LINE_AA)
+                cv2.circle(check, (x2[ix], y2[ix]), 2, (255, 0, 0), 2, cv2.LINE_AA)
             cv2.imshow("Dots Check", check)
             cv2.waitKey(0)
-
-        x1, y1 = self.standard_dot_per_line(x1, y1)
-        x2, y2 = self.standard_dot_per_line(x2, y2)
 
         line1 = []  # toa do cua cac diem hang tren
         line2 = []  # toa do cac diem hang duoi
